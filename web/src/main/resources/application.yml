@@ -1,0 +1,7 @@
+# 配置数据源
+spring:
+  datasource:
+    driverClassName: com.mysql.jdbc.Driver
+    url: jdbc:mysql://172.30.1.228:3306/dsep
+    username: root
+    password: 1qazxsw@Yunli123
