@@ -6,7 +6,6 @@ import com.yunli.bigdata.dsep.foundation.util.JsonUtil;
 import com.yunli.web.dto.TableStat;
 import com.yunli.web.service.DataResourceService;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
