@@ -27,4 +27,40 @@ public interface DataResourceRepository extends JpaRepository<DataResource, Long
 
     @Query(nativeQuery = true, value = "select id from data_topics where status >= 2 and id in :topicIds")
     List<Long> findByTopicId(@Param("topicIds") List<Long> topicIds);
+
+    // 分层级查询
+    @Query(nativeQuery = true, value = "select count(1) from data_resources where name_en like ?1%")
+    Long countByLayer(String layer);
+
+    @Query(nativeQuery = true, value = "select count(1) from data_resources where count=0 and name_en like ?1%")
+    Long countBlankTableByLayer(String layer);
+
+    @Query(nativeQuery = true, value = "select count(1) from data_resources a LEFT JOIN resource_tag b on a.id = b.resource_id where b.tag_id is null and a.name_en like ?1%")
+    Long countUnrelatedTableCountByLayer(String layer);
+
+    @Query(nativeQuery = true, value = "select count(1) from data_resources where status <> 2 and name_en like ?1%")
+    Long countUnpublishedTableCountByLayer(String layer);
+
+    // 总查询
+    @Query(nativeQuery = true, value = "select count(1) from data_resources where count=0")
+    Long countBlankTable();
+
+    @Query(nativeQuery = true, value = "select count(1) from data_resources a LEFT JOIN resource_tag b on a.id = b.resource_id where b.tag_id is null")
+    Long countUnrelatedTableCount();
+
+    @Query(nativeQuery = true, value = "select count(1) from data_resources where status <> 2")
+    Long countUnpublishedTableCount();
+
+    //其他查询
+    @Query(nativeQuery = true, value = "select count(1) from data_resources where substr(name_en,1,3) not in ('stg','ods','dwd','dws','adm','dim')")
+    Long countOtherLayer();
+
+    @Query(nativeQuery = true, value = "select count(1) from data_resources where count=0 and substr(name_en,1,3) not in ('stg','ods','dwd','dws','adm','dim')")
+    Long countOtherLayerBlankTable();
+
+    @Query(nativeQuery = true, value = "select count(1) from data_resources a LEFT JOIN resource_tag b on a.id = b.resource_id where b.tag_id is null and substr(name_en,1,3) not in ('stg','ods','dwd','dws','adm','dim')")
+    Long countOtherLayerUnrelatedTableCount();
+
+    @Query(nativeQuery = true, value = "select count(1) from data_resources where status <> 2 and substr(name_en,1,3) not in ('stg','ods','dwd','dws','adm','dim')")
+    Long countOtherLayerUnpublishedTableCount();
 }

@@ -5,3 +5,5 @@ spring:
     url: jdbc:mysql://172.30.1.228:3306/dsep
     username: root
     password: 1qazxsw@Yunli123
+  thymeleaf:
+    cache: false

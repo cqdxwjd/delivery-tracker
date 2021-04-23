@@ -65,7 +65,7 @@ public class DataResource implements Serializable {
   @Column(name = "interactive_query")
   private Boolean interactiveQuery = false;
 
-  /** 数据表数量*/
+  /** 数据量*/
   @Column(name = "count")
   private Long count = 0L;
 
