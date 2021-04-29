@@ -23,23 +23,30 @@
             <col th:width="150">
             <col th:width="150">
             <col th:width="150">
+            <col th:width="150">
+            <col th:width="150">
+            <col th:width="150">
             <col>
         </colgroup>
         <thead>
         <tr>
             <th></th>
+            <th>配置的Oozie调度任务总数</th>
             <th>运行中的Oozie调度任务数</th>
             <th>暂停中的Oozie调度任务数</th>
-            <th>Oozie工作流数</th>
-            <th>Hsql等治理脚本数</th>
+            <th>配置的Oozie工作流总数</th>
+            <th>Hive脚本数</th>
+            <th>Shell脚本数</th>
         </tr>
         </thead>
         <tbody>
         <td>汇总</td>
+        <td th:text="${oozieSchduleCount}">配置的Oozie调度任务总数</td>
         <td th:text="${runningOozieSchduleCount}">运行中的Oozie调度任务数</td>
         <td th:text="${suspendedOozieSchduleCount}">暂停中的Oozie调度任务数</td>
-        <td th:text="${oozieJobCount}">Oozie工作流数</td>
-        <td th:text="${governScriptCount}">Hsql等治理脚本数</td>
+        <td th:text="${oozieJobCount}">配置的Oozie工作流总数</td>
+        <td th:text="${hiveScriptCount}">Hive脚本数</td>
+        <td th:text="${shellScriptCount}">Shell脚本数</td>
         </tbody>
     </table>
 </div>
