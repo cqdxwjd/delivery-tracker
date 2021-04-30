@@ -9,6 +9,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="stylesheet" media="all" th:href="@{/layui/css/layui.css}"></link>
+    <link rel="stylesheet" media="all" th:href="@{/udf/table.css}"></link>
+
 </head>
 
 <body>
@@ -19,6 +21,7 @@
 <div class="layui-form">
     <table class="layui-table">
         <colgroup>
+            <col th:width="150">
             <col th:width="150">
             <col th:width="150">
             <col th:width="150">
@@ -33,7 +36,7 @@
         </tr>
         </thead>
         <tbody>
-        <td>汇总</td>
+        <td class="column-header">汇总</td>
         <td th:text="${count}">文件夹数</td>
         <td th:text="${nullCount}">空文件夹数</td>
         <td th:text="${unMountedCount}">未挂目录的文件夹数</td>

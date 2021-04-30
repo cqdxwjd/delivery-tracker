@@ -9,50 +9,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <link rel="stylesheet" media="all" th:href="@{/layui/css/layui.css}"></link>
+    <link rel="stylesheet" media="all" th:href="@{/udf/table.css}"></link>
 </head>
 
 <body>
 <table id="demo" lay-filter="test"></table>
 
 <script charset="utf-8" th:inline="none" type="text/javascript" th:src="@{/layui/layui.js}"></script>
-<!--<script type="text/javascript" th:inline="none">-->
-<!--    layui.use('table', function () {-->
-<!--        var table = layui.table;-->
-
-<!--        table.render({-->
-<!--            elem: '#demo'-->
-<!--            , url: '/result'-->
-<!--            , method: 'get'-->
-<!--            , cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增-->
-<!--            , cols: [[-->
-<!--                {field: '占位格', width: 80, title: ''},-->
-<!--                {field: 'tableCount', width: 80, title: 'Isafa', sort: true}-->
-<!--                , {field: 'blankTableCount', width: 80, title: '用户名'}-->
-<!--                , {field: 'unrelatedTableCount', width: 80, title: '性别', sort: true}-->
-<!--                , {-->
-<!--                    field: 'unpublishedTableCount',-->
-<!--                    title: '签名',-->
-<!--                    width: '30%',-->
-<!--                    minWidth: 100-->
-<!--                } //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增-->
-<!--            ]],-->
-<!--            parseData: function (res) {-->
-<!--                return {-->
-<!--                    "code": res.code, //解析接口状态-->
-<!--                    "msg": res.msg, //解析提示文本-->
-<!--                    "count": res.count, //解析数据长度-->
-<!--                    "data": res.data //解析数据列表-->
-<!--                };-->
-<!--            },-->
-<!--            skin: 'line', //表格风格-->
-<!--            even: true,-->
-<!--            page: true, //是否显示分页-->
-<!--            limits: [5, 7, 10],-->
-<!--            limit: 5 //每页默认显示的数量-->
-<!--        });-->
-<!--    });-->
-<!--</script>-->
-
 <!--静态表格-->
 <div class="layui-form">
     <table class="layui-table">
@@ -60,21 +23,22 @@
             <col th:width="150">
             <col th:width="150">
             <col th:width="150">
-            <col th:width="200">
+            <col th:width="150">
+            <col th:width="150">
             <col>
         </colgroup>
         <thead>
         <tr>
             <th></th>
-            <th>数据表总量</th>
-            <th>无数据表数量</th>
-            <th>未关联目录的数据表数量</th>
-            <th>未发布的数据表数量</th>
+            <th class="row-header">数据表总量</th>
+            <th class="row-header">无数据表数量</th>
+            <th class="row-header">未关联目录的数据表数量</th>
+            <th class="row-header">未发布的数据表数量</th>
         </tr>
         </thead>
         <tbody>
         <tr th:each="tableStat : ${list}">
-            <td th:text="${tableStat.layer}">stg</td>
+            <td th:text="${tableStat.layer}" class="column-header">stg</td>
             <td th:text="${tableStat.tableCount}">stg</td>
             <td th:text="${tableStat.blankTableCount}">stg</td>
             <td th:text="${tableStat.unrelatedTableCount}">stg</td>

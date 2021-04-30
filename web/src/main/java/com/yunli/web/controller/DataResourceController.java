@@ -3,10 +3,8 @@ package com.yunli.web.controller;
 import com.yunli.bigdata.dsep.foundation.CustomHttpHeaderNames;
 import com.yunli.common.json.JSONArray;
 import com.yunli.common.json.JSONObject;
-import com.yunli.web.config.AKSK;
-import com.yunli.web.config.DataPlatfomrConfiguration;
-import com.yunli.web.config.HueJdbcTemplate;
-import com.yunli.web.config.WorkflowScriptsData;
+import com.yunli.web.config.*;
+import com.yunli.web.doman.OozieCoordJobs;
 import com.yunli.web.dto.TableStat;
 import com.yunli.web.repositories.DocumentCatalogRepository;
 import com.yunli.web.repositories.DocumentResourceRepository;
@@ -18,6 +16,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.SingleColumnRowMapper;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,8 +32,9 @@ import javax.crypto.NoSuchPaddingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 @Slf4j
@@ -45,7 +46,8 @@ public class DataResourceController {
     private final RestTemplate restTemplate;
     private final DocumentCatalogRepository documentCatalogRepository;
     private final DataPlatfomrConfiguration dataPlatfomrConfiguration;
-    private final HueJdbcTemplate hueJdbcTemplate;
+    private final HueJdbcTemplateFactory hueJdbcTemplateFactory;
+    private final OozieJdbcTemplateFactory oozieJdbcTemplateFactory;
 
     @Autowired
     public DataResourceController(DataResourceService dataResourceService,
@@ -53,19 +55,20 @@ public class DataResourceController {
                                   RestTemplate restTemplate,
                                   DocumentCatalogRepository documentCatalogRepository,
                                   DataPlatfomrConfiguration dataPlatfomrConfiguration,
-                                  HueJdbcTemplate hueJdbcTemplate) {
+                                  HueJdbcTemplateFactory hueJdbcTemplateFactory, OozieJdbcTemplateFactory oozieJdbcTemplateFactory) {
         this.dataResourceService = dataResourceService;
         this.documentResourceRepository = documentResourceRepository;
         this.restTemplate = restTemplate;
         this.documentCatalogRepository = documentCatalogRepository;
         this.dataPlatfomrConfiguration = dataPlatfomrConfiguration;
-        this.hueJdbcTemplate = hueJdbcTemplate;
+        this.hueJdbcTemplateFactory = hueJdbcTemplateFactory;
+        this.oozieJdbcTemplateFactory = oozieJdbcTemplateFactory;
     }
 
     @GetMapping("/test")
     @ResponseBody
     public void test() {
-        System.out.println(hueJdbcTemplate.getHueJdbcTemplate());
+        System.out.println(hueJdbcTemplateFactory.getJdbcTemplate());
     }
 
     @RequestMapping("/table")
@@ -135,30 +138,36 @@ public class DataResourceController {
         int runningOozieSchduleCount = 0;
         int suspendedOozieSchduleCount = 0;
         HttpEntity<Object> request = new HttpEntity<>(null, new HttpHeaders());
-        ResponseEntity<String> exchange = restTemplate.exchange("http://172.30.1.233:11000/oozie/v2/jobs?jobtype=coord",
-                HttpMethod.GET, request, String.class);
-        JSONArray coordinatorjobs = new JSONObject(exchange.getBody()).getJSONArray("coordinatorjobs");
-        for (Object coordinatorjob : coordinatorjobs) {
-            JSONObject coordinatorjobJson = (JSONObject) coordinatorjob;
-            if (coordinatorjobJson.getString("status").equals("RUNNING")) {
+
+        JdbcTemplate oozieJdbcTemplate = oozieJdbcTemplateFactory.getJdbcTemplate();
+        List<OozieCoordJobs> jobs = oozieJdbcTemplate.query("select app_name,status from coord_jobs", new RowMapper<OozieCoordJobs>() {
+            @Override
+            public OozieCoordJobs mapRow(ResultSet rs, int rowNum) throws SQLException {
+                return new OozieCoordJobs(rs.getString(1),
+                        rs.getString(2));
+            }
+        });
+        for (OozieCoordJobs job : jobs) {
+            if (job.getStatus().equals("RUNNING")) {
                 runningOozieSchduleCount++;
             }
-            if (coordinatorjobJson.getString("status").equals("SUSPENDED")) {
+            if (job.getStatus().equals("SUSPENDED")) {
                 suspendedOozieSchduleCount++;
             }
         }
+
         // hue中工作流配置的数量
-        List<Integer> workflows = hueJdbcTemplate.getHueJdbcTemplate().query("select count(1) from desktop_document2 where type='oozie-workflow2' and is_history=0 and is_trashed=0", new SingleColumnRowMapper<>(Integer.class));
+        List<Integer> workflows = hueJdbcTemplateFactory.getJdbcTemplate().query("select count(1) from desktop_document2 where type='oozie-workflow2' and is_history=0 and is_trashed=0", new SingleColumnRowMapper<>(Integer.class));
         int oozieJobCount = workflows.get(0);
         // hue中调度配置的数量
-        List<Integer> schedules = hueJdbcTemplate.getHueJdbcTemplate().query("select count(1) from desktop_document2 where type='oozie-coordinator2' and is_history=0 and is_trashed=0;",
+        List<Integer> schedules = hueJdbcTemplateFactory.getJdbcTemplate().query("select count(1) from desktop_document2 where type='oozie-coordinator2' and is_history=0 and is_trashed=0;",
                 new SingleColumnRowMapper<>(Integer.class));
         int oozieSchduleCount = schedules.get(0);
 
         // 解析工作流中包含的脚本数
         int hiveScriptCount = 0;
         int shellScriptCount = 0;
-        List<WorkflowScriptsData> workflowScriptsDataList = hueJdbcTemplate.getHueJdbcTemplate().query("select name,data from desktop_document2 where type='oozie-workflow2' and is_history=0 and is_trashed=0",
+        List<WorkflowScriptsData> workflowScriptsDataList = hueJdbcTemplateFactory.getJdbcTemplate().query("select name,data from desktop_document2 where type='oozie-workflow2' and is_history=0 and is_trashed=0",
                 new BeanPropertyRowMapper<>(WorkflowScriptsData.class));
         for (WorkflowScriptsData workflowScriptsData : workflowScriptsDataList) {
             JSONObject jsonObject = new JSONObject(workflowScriptsData.getData());
@@ -182,23 +191,4 @@ public class DataResourceController {
         model.addAttribute("shellScriptCount", shellScriptCount);
         return "program";
     }
-
-    // 动态渲染时使用
-//    @RequestMapping("/result")
-//    @ResponseBody
-//    public String result() {
-//        ArrayList<TableStat> list = new ArrayList<>();
-//        TableStat tableStat = new TableStat();
-//        tableStat.setTableCount(dataResourceService.getTableCount());
-//        tableStat.setBlankTableCount(dataResourceService.getBlankTableCount());
-//        tableStat.setUnrelatedTableCount(dataResourceService.getUnrelatedTableCount());
-//        tableStat.setUnpublishedTableCount(dataResourceService.getUnpublishedTableCount());
-//        list.add(tableStat);
-//        Map<String, Object> map = new HashMap<>();
-//        map.put("code", 0);
-//        map.put("msg", "");
-//        map.put("data", list);
-//        map.put("count", 1);
-//        return JSONObject.valueToString(map);
-//    }
 }
