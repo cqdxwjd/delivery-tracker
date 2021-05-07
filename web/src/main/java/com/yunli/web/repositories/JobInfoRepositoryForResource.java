@@ -9,5 +9,7 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface JobInfoRepositoryForResource extends JpaRepository<JobInfo, Long> {
-  boolean existsByNameAndStatusNot(String name,Integer status);
+    boolean existsByNameAndStatusNot(String name, Integer status);
+
+    Long countByType(String type);
 }

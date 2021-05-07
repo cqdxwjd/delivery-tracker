@@ -15,7 +15,7 @@
         <li class="program">程序开发</li>
         <li class="bus">实时数据信道</li>
         <li class="job">作业</li>
-        <button class="layui-btn layui-btn-radius" onclick="download();">单独下载</button>
+        <!--        <button class="layui-btn layui-btn-radius" onclick="download();">单独下载</button>-->
         <button class="layui-btn layui-btn-radius layui-btn-lg" onclick="downloadAll();">汇总下载</button>
     </ul>
     <div class="layui-tab-content">
@@ -60,52 +60,52 @@
         }
 
         // 单独下载
-        window.download = function () {
-            var tab = document.getElementsByClassName('layui-this');
-            var tabName = tab.item(0).className;
-            if (tabName.search('table') != -1) {
-                var sheet = getSheet('/v2/table');
-                var wb = XLSX.utils.book_new();
-                sheet.then(function (value) {
-                    XLSX.utils.book_append_sheet(wb, value, "数据表");
-                    XLSX.writeFile(wb, "数据表统计.xlsx");
-                });
-            } else if (tabName.search('document') != -1) {
-                var sheet = getSheet('/v2/document');
-                var wb = XLSX.utils.book_new();
-                sheet.then(function (value) {
-                    XLSX.utils.book_append_sheet(wb, value, "文件夹");
-                    XLSX.writeFile(wb, "文件夹统计.xlsx");
-                });
-            } else if (tabName.search('program') != -1) {
-                var sheet = getSheet('/v2/program');
-                var wb = XLSX.utils.book_new();
-                sheet.then(function (value) {
-                    XLSX.utils.book_append_sheet(wb, value, "程序开发");
-                    XLSX.writeFile(wb, "程序开发统计.xlsx");
-                });
-            } else if (tabName.search('bus') != -1) {
-                var sheet = getSheet('/test');
-                var wb = XLSX.utils.book_new();
-                sheet.then(function (value) {
-                    XLSX.utils.book_append_sheet(wb, value, "实时数据信道");
-                    XLSX.writeFile(wb, "实时数据信道统计.xlsx");
-                });
-            } else if (tabName.search('job') != -1) {
-                var sheet = getSheet('/test');
-                var wb = XLSX.utils.book_new();
-                sheet.then(function (value) {
-                    XLSX.utils.book_append_sheet(wb, value, "作业");
-                    XLSX.writeFile(wb, "作业统计.xlsx");
-                });
-            }
-        }
+        // window.download = function () {
+        //     var tab = document.getElementsByClassName('layui-this');
+        //     var tabName = tab.item(0).className;
+        //     if (tabName.search('table') != -1) {
+        //         var sheet = getSheet('/v2/table');
+        //         var wb = XLSX.utils.book_new();
+        //         sheet.then(function (value) {
+        //             XLSX.utils.book_append_sheet(wb, value, "数据表");
+        //             XLSX.writeFile(wb, "数据表统计.xlsx");
+        //         });
+        //     } else if (tabName.search('document') != -1) {
+        //         var sheet = getSheet('/v2/document');
+        //         var wb = XLSX.utils.book_new();
+        //         sheet.then(function (value) {
+        //             XLSX.utils.book_append_sheet(wb, value, "文件夹");
+        //             XLSX.writeFile(wb, "文件夹统计.xlsx");
+        //         });
+        //     } else if (tabName.search('program') != -1) {
+        //         var sheet = getSheet('/v2/program');
+        //         var wb = XLSX.utils.book_new();
+        //         sheet.then(function (value) {
+        //             XLSX.utils.book_append_sheet(wb, value, "程序开发");
+        //             XLSX.writeFile(wb, "程序开发统计.xlsx");
+        //         });
+        //     } else if (tabName.search('bus') != -1) {
+        //         var sheet = getSheet('/test');
+        //         var wb = XLSX.utils.book_new();
+        //         sheet.then(function (value) {
+        //             XLSX.utils.book_append_sheet(wb, value, "实时数据信道");
+        //             XLSX.writeFile(wb, "实时数据信道统计.xlsx");
+        //         });
+        //     } else if (tabName.search('job') != -1) {
+        //         var sheet = getSheet('/test');
+        //         var wb = XLSX.utils.book_new();
+        //         sheet.then(function (value) {
+        //             XLSX.utils.book_append_sheet(wb, value, "作业");
+        //             XLSX.writeFile(wb, "作业统计.xlsx");
+        //         });
+        //     }
+        // }
 
         window.downloadAll = function () {
             var tableSheet = getSheet('/v2/table');
             var documentSheet = getSheet('/v2/document');
             var programSheet = getSheet('/v2/program');
-            var busSheet = getSheet('/test');
+            var busSheet = getSheet('/v2/bus');
             var jobSheet = getSheet('/test');
 
             var wb = XLSX.utils.book_new();
@@ -183,19 +183,13 @@
         window.renderBus = function () {
             table.render({
                 elem: '#bus',
-                url: '/test',
+                url: '/v2/bus',
                 cellMinWidth: 150,
                 cols: [
                     [
-                        {field: 'id', width: 80, title: 'ID', sort: true}
-                        , {field: 'username', width: 80, title: '用户名'}
-                        , {field: 'sex', width: 80, title: '性别', sort: true}
-                        , {field: 'city', width: 80, title: '城市'}
-                        , {field: 'sign', title: '签名', width: '30%', minWidth: 100} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                        , {field: 'experience', title: '积分', sort: true}
-                        , {field: 'score', title: '评分', sort: true}
-                        , {field: 'classify', title: '职业'}
-                        , {field: 'wealth', width: 137, title: '财富', sort: true}
+                        {field: 'type', title: ''}
+                        , {field: 'count', title: '信道数'}
+                        , {field: 'unMountedCount', title: '未挂目录的信道数'}
                     ]
                 ]
             });
@@ -204,19 +198,17 @@
         window.renderJob = function () {
             table.render({
                 elem: '#job',
-                url: '/test',
+                url: '/v2/job',
                 cellMinWidth: 150,
                 cols: [
                     [
-                        {field: 'id', width: 80, title: 'ID', sort: true}
-                        , {field: 'username', width: 80, title: '用户名'}
-                        , {field: 'sex', width: 80, title: '性别', sort: true}
-                        , {field: 'city', width: 80, title: '城市'}
-                        , {field: 'sign', title: '签名', width: '30%', minWidth: 100} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-                        , {field: 'experience', title: '积分', sort: true}
-                        , {field: 'score', title: '评分', sort: true}
-                        , {field: 'classify', title: '职业'}
-                        , {field: 'wealth', width: 137, title: '财富', sort: true}
+                        {field: 'type', title: ''}
+                        , {field: 'fileImportCount', title: '文件导入作业数'}
+                        , {field: 'tableImportCount', title: '库表导入作业数'}
+                        , {field: 'realtimeImportCount', title: '实时数据作业数'}
+                        , {field: 'realtimeGovernCount', title: '实时数据开发作业数'}
+                        , {field: 'fileUploadCount', title: '文件上传作业数'}
+                        , {field: 'tableExportCount', title: '库表导出作业数'}
                     ]
                 ]
             });

@@ -6,11 +6,8 @@ import com.yunli.common.json.JSONArray;
 import com.yunli.common.json.JSONObject;
 import com.yunli.web.config.*;
 import com.yunli.web.doman.OozieCoordJobs;
-import com.yunli.web.dto.DocumentStat;
-import com.yunli.web.dto.ProgramStat;
-import com.yunli.web.dto.TableStat;
-import com.yunli.web.repositories.DocumentCatalogRepository;
-import com.yunli.web.repositories.DocumentResourceRepository;
+import com.yunli.web.dto.*;
+import com.yunli.web.repositories.*;
 import com.yunli.web.service.DataResourceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +48,9 @@ public class DataResourceController {
     private final DataPlatfomrConfiguration dataPlatfomrConfiguration;
     private final HueJdbcTemplateFactory hueJdbcTemplateFactory;
     private final OozieJdbcTemplateFactory oozieJdbcTemplateFactory;
+    private final TopicRepository topicRepository;
+    private final JobInfoRepositoryForResource jobInfoRepositoryForResource;
+    private final StubServiceJobRepository stubServiceJobRepository;
 
     @Autowired
     public DataResourceController(DataResourceService dataResourceService,
@@ -58,7 +58,11 @@ public class DataResourceController {
                                   RestTemplate restTemplate,
                                   DocumentCatalogRepository documentCatalogRepository,
                                   DataPlatfomrConfiguration dataPlatfomrConfiguration,
-                                  HueJdbcTemplateFactory hueJdbcTemplateFactory, OozieJdbcTemplateFactory oozieJdbcTemplateFactory) {
+                                  HueJdbcTemplateFactory hueJdbcTemplateFactory,
+                                  OozieJdbcTemplateFactory oozieJdbcTemplateFactory,
+                                  TopicRepository topicRepository,
+                                  JobInfoRepositoryForResource jobInfoRepositoryForResource,
+                                  StubServiceJobRepository stubServiceJobRepository) {
         this.dataResourceService = dataResourceService;
         this.documentResourceRepository = documentResourceRepository;
         this.restTemplate = restTemplate;
@@ -66,6 +70,9 @@ public class DataResourceController {
         this.dataPlatfomrConfiguration = dataPlatfomrConfiguration;
         this.hueJdbcTemplateFactory = hueJdbcTemplateFactory;
         this.oozieJdbcTemplateFactory = oozieJdbcTemplateFactory;
+        this.topicRepository = topicRepository;
+        this.jobInfoRepositoryForResource = jobInfoRepositoryForResource;
+        this.stubServiceJobRepository = stubServiceJobRepository;
     }
 
     @GetMapping("/test")
@@ -317,6 +324,30 @@ public class DataResourceController {
             }
         }
         list.add(new ProgramStat("汇总", oozieSchduleCount, runningOozieSchduleCount, suspendedOozieSchduleCount, oozieJobCount, hiveScriptCount, shellScriptCount));
+        return ResponseEntity.ok().body(WebResult.success(list));
+    }
+
+    @GetMapping("/v2/bus")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<BusStat>>> busV2() {
+        List<BusStat> list = new ArrayList<>();
+        long count = topicRepository.count();
+        long unMountedCount = topicRepository.countUnmounted();
+        list.add(new BusStat("汇总", count, unMountedCount));
+        return ResponseEntity.ok().body(WebResult.success(list));
+    }
+
+    @GetMapping("/v2/job")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<JobStat>>> jobV2() {
+        List<JobStat> list = new ArrayList<>();
+        Long fileImportCount = jobInfoRepositoryForResource.countByType("文件导入");
+        Long tableImportCount = jobInfoRepositoryForResource.countByType("库表导入");
+        Long realtimeImportCount = stubServiceJobRepository.countByType("0");
+        Long realtimeGovernCount = stubServiceJobRepository.countByType("1");
+        Long fileUploadCount = jobInfoRepositoryForResource.countByType("文件上传");
+        Long tableExportCount = jobInfoRepositoryForResource.countByType("库表导出");
+        list.add(new JobStat("汇总", fileImportCount, tableImportCount, realtimeImportCount, realtimeGovernCount, fileUploadCount, tableExportCount));
         return ResponseEntity.ok().body(WebResult.success(list));
     }
 }
