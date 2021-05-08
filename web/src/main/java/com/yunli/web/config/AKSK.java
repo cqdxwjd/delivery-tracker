@@ -3,6 +3,7 @@ package com.yunli.web.config;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,6 +22,7 @@ import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 
+@Slf4j
 public class AKSK {
     /**
      * 通过 AKSK 生成密文
@@ -62,6 +64,7 @@ public class AKSK {
         requestHeaders.add("Accept", MediaType.APPLICATION_JSON.toString());
         requestHeaders.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Object> request = new HttpEntity<>(cipherText, requestHeaders);
+        log.info(cipherText);
         ResponseEntity<String> responseEntity = restTemplate.exchange(uri, HttpMethod.POST, request, String.class);
         if (responseEntity.getStatusCode() == HttpStatus.OK ||
                 responseEntity.getStatusCode() == HttpStatus.CREATED) {
