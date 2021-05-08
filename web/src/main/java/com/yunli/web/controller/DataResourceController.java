@@ -83,7 +83,7 @@ public class DataResourceController {
     }
 
     // 合体页
-    @GetMapping("one")
+    @GetMapping("/")
     public String one() {
         return "one";
     }
