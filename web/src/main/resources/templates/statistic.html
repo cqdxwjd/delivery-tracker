@@ -59,54 +59,12 @@
             });
         }
 
-        // 单独下载
-        // window.download = function () {
-        //     var tab = document.getElementsByClassName('layui-this');
-        //     var tabName = tab.item(0).className;
-        //     if (tabName.search('table') != -1) {
-        //         var sheet = getSheet('/v2/table');
-        //         var wb = XLSX.utils.book_new();
-        //         sheet.then(function (value) {
-        //             XLSX.utils.book_append_sheet(wb, value, "数据表");
-        //             XLSX.writeFile(wb, "数据表统计.xlsx");
-        //         });
-        //     } else if (tabName.search('document') != -1) {
-        //         var sheet = getSheet('/v2/document');
-        //         var wb = XLSX.utils.book_new();
-        //         sheet.then(function (value) {
-        //             XLSX.utils.book_append_sheet(wb, value, "文件夹");
-        //             XLSX.writeFile(wb, "文件夹统计.xlsx");
-        //         });
-        //     } else if (tabName.search('program') != -1) {
-        //         var sheet = getSheet('/v2/program');
-        //         var wb = XLSX.utils.book_new();
-        //         sheet.then(function (value) {
-        //             XLSX.utils.book_append_sheet(wb, value, "程序开发");
-        //             XLSX.writeFile(wb, "程序开发统计.xlsx");
-        //         });
-        //     } else if (tabName.search('bus') != -1) {
-        //         var sheet = getSheet('/test');
-        //         var wb = XLSX.utils.book_new();
-        //         sheet.then(function (value) {
-        //             XLSX.utils.book_append_sheet(wb, value, "实时数据信道");
-        //             XLSX.writeFile(wb, "实时数据信道统计.xlsx");
-        //         });
-        //     } else if (tabName.search('job') != -1) {
-        //         var sheet = getSheet('/test');
-        //         var wb = XLSX.utils.book_new();
-        //         sheet.then(function (value) {
-        //             XLSX.utils.book_append_sheet(wb, value, "作业");
-        //             XLSX.writeFile(wb, "作业统计.xlsx");
-        //         });
-        //     }
-        // }
-
         window.downloadAll = function () {
             var tableSheet = getSheet('/v2/table');
             var documentSheet = getSheet('/v2/document');
             var programSheet = getSheet('/v2/program');
             var busSheet = getSheet('/v2/bus');
-            var jobSheet = getSheet('/test');
+            var jobSheet = getSheet('/v2/job');
 
             var wb = XLSX.utils.book_new();
             // 使用类似级联的方式下载所有的sheet页，否则可能获取不到sheet页就开始下载

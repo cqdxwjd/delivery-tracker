@@ -9,6 +9,7 @@ import com.yunli.web.doman.OozieCoordJobs;
 import com.yunli.web.dto.*;
 import com.yunli.web.repositories.*;
 import com.yunli.web.service.DataResourceService;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -21,10 +22,9 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.SingleColumnRowMapper;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -34,8 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Controller
@@ -75,17 +74,154 @@ public class DataResourceController {
         this.stubServiceJobRepository = stubServiceJobRepository;
     }
 
-    @GetMapping("/test")
-    @ResponseBody
-    public String test() {
-        String str = "{\"code\":0,\"msg\":\"\",\"count\":1000,\"data\":[{\"id\":10000,\"username\":\"user-0\",\"sex\":\"女\",\"city\":\"城市-0\",\"sign\":\"签名-0\",\"experience\":255,\"logins\":24,\"wealth\":82830700,\"classify\":\"作家\",\"score\":57},{\"id\":10001,\"username\":\"user-1\",\"sex\":\"男\",\"city\":\"城市-1\",\"sign\":\"签名-1\",\"experience\":884,\"logins\":58,\"wealth\":64928690,\"classify\":\"词人\",\"score\":27},{\"id\":10002,\"username\":\"user-2\",\"sex\":\"女\",\"city\":\"城市-2\",\"sign\":\"签名-2\",\"experience\":650,\"logins\":77,\"wealth\":6298078,\"classify\":\"酱油\",\"score\":31},{\"id\":10003,\"username\":\"user-3\",\"sex\":\"女\",\"city\":\"城市-3\",\"sign\":\"签名-3\",\"experience\":362,\"logins\":157,\"wealth\":37117017,\"classify\":\"诗人\",\"score\":68},{\"id\":10004,\"username\":\"user-4\",\"sex\":\"男\",\"city\":\"城市-4\",\"sign\":\"签名-4\",\"experience\":807,\"logins\":51,\"wealth\":76263262,\"classify\":\"作家\",\"score\":6},{\"id\":10005,\"username\":\"user-5\",\"sex\":\"女\",\"city\":\"城市-5\",\"sign\":\"签名-5\",\"experience\":173,\"logins\":68,\"wealth\":60344147,\"classify\":\"作家\",\"score\":87},{\"id\":10006,\"username\":\"user-6\",\"sex\":\"女\",\"city\":\"城市-6\",\"sign\":\"签名-6\",\"experience\":982,\"logins\":37,\"wealth\":57768166,\"classify\":\"作家\",\"score\":34},{\"id\":10007,\"username\":\"user-7\",\"sex\":\"男\",\"city\":\"城市-7\",\"sign\":\"签名-7\",\"experience\":727,\"logins\":150,\"wealth\":82030578,\"classify\":\"作家\",\"score\":28},{\"id\":10008,\"username\":\"user-8\",\"sex\":\"男\",\"city\":\"城市-8\",\"sign\":\"签名-8\",\"experience\":951,\"logins\":133,\"wealth\":16503371,\"classify\":\"词人\",\"score\":14},{\"id\":10009,\"username\":\"user-9\",\"sex\":\"女\",\"city\":\"城市-9\",\"sign\":\"签名-9\",\"experience\":484,\"logins\":25,\"wealth\":86801934,\"classify\":\"词人\",\"score\":75}]}";
-        return str;
+    @GetMapping("/one")
+    public String one() {
+        return "statistic";
+    }
+
+    @GetMapping("/two")
+    public String two() {
+        return "catalog";
+    }
+
+    @GetMapping("/three")
+    public String three() {
+        return "model";
+    }
+
+    @GetMapping("/createTableControl")
+    public String createTableControl() {
+        return "createTable";
     }
 
     // 合体页
     @GetMapping("/")
-    public String one() {
-        return "one";
+    public String index() {
+        return "index";
+    }
+
+    @GetMapping("/table/all")
+    public ResponseEntity<WebResult<List<DataResourceDto>>> getAllTables(@RequestParam(name = "page") int page,
+                                                                         @RequestParam(name = "limit") int limit,
+                                                                         @RequestParam(name = "nameEn", defaultValue = "") String nameEn,
+                                                                         @RequestParam(name = "field", defaultValue = "status") String field,
+                                                                         @RequestParam(name = "order", defaultValue = "asc") String order) throws NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        ArrayList<DataResourceDto> list = new ArrayList<>();
+        HttpHeaders requestHeaders = new HttpHeaders();
+        String token = AKSK.getToken(
+                dataPlatfomrConfiguration.getAddress(),
+                AKSK.getCipherText(
+                        dataPlatfomrConfiguration.getUserId(),
+                        dataPlatfomrConfiguration.getPrivateKey()
+                )
+        );
+        requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
+        HttpEntity<Object> request = new HttpEntity<>(null, requestHeaders);
+        String body;
+        int count = 0;
+        if (field.equals("status") && nameEn.equals("")) {
+            body = restTemplate
+                    .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources?pageNum=" + page + "&pageSize=" + limit,
+                            HttpMethod.GET, request, String.class).getBody();
+            JSONObject tablesJson = new JSONObject(body);
+            count = tablesJson.getInt("totalElementCount");
+        } else {
+            String tablesBody = restTemplate
+                    .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources",
+                            HttpMethod.GET, request, String.class).getBody();
+            JSONObject tablesJson = new JSONObject(tablesBody);
+            count = tablesJson.getInt("totalElementCount");
+            body = restTemplate
+                    .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources?pageNum=1" + "&pageSize=" + count,
+                            HttpMethod.GET, request, String.class).getBody();
+        }
+
+        JSONObject tablesJson = new JSONObject(body);
+        JSONArray tablesJsonArray = tablesJson.getJSONArray("data");
+        for (Object o : tablesJsonArray) {
+            JSONObject o1 = (JSONObject) o;
+            int status = o1.getInt("status");
+            String statusString;
+            switch (status) {
+                case 0:
+                    statusString = "未发布";
+                    break;
+                case 2:
+                    statusString = "已发布";
+                    break;
+                case 1:
+                    statusString = "发布审核中";
+                    break;
+                case 3:
+                    statusString = "变更审核中";
+                    break;
+                case 4:
+                    statusString = "下架审核中";
+                    break;
+                case 5:
+                    statusString = "关联目录审核中";
+                    break;
+                case 6:
+                    statusString = "加载数据审核中";
+                    break;
+                case 7:
+                    statusString = "数据加载中";
+                    break;
+                default:
+                    statusString = "未知状态";
+            }
+            String nameEn1 = o1.getString("nameEn");
+            if (nameEn.equals("") || nameEn1.contains(nameEn)) {
+                list.add(new DataResourceDto(o1.getString("nameCn"), nameEn1, statusString, o1.getInt("count"), o1.getInt("id"), o1.getString("createTime")));
+            }
+        }
+        if (!field.equals("status")) {
+            list.sort(new Comparator<DataResourceDto>() {
+                @SneakyThrows
+                @Override
+                public int compare(DataResourceDto o1, DataResourceDto o2) {
+                    if (order.equals("asc")) {
+                        switch (field) {
+                            case "nameCn":
+                                return o1.getNameCn().compareTo(o2.getNameCn());
+                            case "nameEn":
+                                return o1.getNameEn().compareTo(o2.getNameEn());
+                            case "count":
+                                return o1.getCount() - o2.getCount();
+                            case "createTime":
+                                return o1.getCreateTime().compareTo(o2.getCreateTime());
+                            default:
+                                throw new Exception();
+                        }
+                    } else if (order.equals("desc")) {
+                        switch (field) {
+                            case "nameCn":
+                                return o2.getNameCn().compareTo(o1.getNameCn());
+                            case "nameEn":
+                                return o2.getNameEn().compareTo(o1.getNameEn());
+                            case "count":
+                                return o2.getCount() - o1.getCount();
+                            case "createTime":
+                                return o2.getCreateTime().compareTo(o1.getCreateTime());
+                            default:
+                                throw new Exception();
+                        }
+                    } else {
+                        throw new Exception();
+                    }
+
+                }
+            });
+        }
+        WebResult<List<DataResourceDto>> result = null;
+        if (field.equals("status") && nameEn.equals("")) {
+            result = WebResult.success(list);
+            result.setCount(count);
+        } else {
+            result = WebResult.success(list.subList((page - 1) * limit, page * limit));
+            result.setCount(list.size());
+        }
+        return ResponseEntity.ok().body(result);
     }
 
     @RequestMapping("/table")
@@ -117,6 +253,60 @@ public class DataResourceController {
         list.add(dataResourceService.getTableStat("其他"));
         list.add(dataResourceService.getTableStat("总共"));
         log.info("success");
+        return ResponseEntity.ok().body(WebResult.success(list));
+    }
+
+    @GetMapping("/table/columns/{id}")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<ResourceColumnDto>>> getColumns(@PathVariable(name = "id") long id) throws NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        ArrayList<ResourceColumnDto> list = new ArrayList<>();
+        HttpHeaders requestHeaders = new HttpHeaders();
+        String token = AKSK.getToken(
+                dataPlatfomrConfiguration.getAddress(),
+                AKSK.getCipherText(
+                        dataPlatfomrConfiguration.getUserId(),
+                        dataPlatfomrConfiguration.getPrivateKey()
+                )
+        );
+        requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
+        HttpEntity<Object> request = new HttpEntity<>(null, requestHeaders);
+        String treeBody = restTemplate
+                .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources/" + id + "?returnColumn=true",
+                        HttpMethod.GET, request, String.class).getBody();
+        JSONObject jsonObject = new JSONObject(treeBody);
+        JSONObject data = jsonObject.getJSONObject("data");
+        String nameEn = data.getString("nameEn");
+        String nameCn = data.getString("nameCn");
+        int order = 1;
+        JSONArray resourceColumns = data.getJSONArray("resourceColumns");
+        for (Object resourceColumn : resourceColumns) {
+            JSONObject resourceColumn1 = (JSONObject) resourceColumn;
+            list.add(new ResourceColumnDto(
+                    nameEn,
+                    nameCn,
+                    order++,
+                    resourceColumn1.getString("columnName"),
+                    resourceColumn1.getString("columnDescription"),
+                    resourceColumn1.getString("columnType"),
+                    resourceColumn1.getString("columnDescription"),
+                    resourceColumn1.getBoolean("partitionColumn")
+            ));
+        }
+        return ResponseEntity.ok().body(WebResult.success(list));
+    }
+
+    @GetMapping("/table/{nameEn}")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<Object>>> getData(@PathVariable(name = "nameEn") String nameEn) throws NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        ArrayList<Object> list = new ArrayList<>();
+        HttpHeaders requestHeaders = new HttpHeaders();
+        String token = AKSK.getToken(
+                dataPlatfomrConfiguration.getAddress(),
+                AKSK.getCipherText(
+                        dataPlatfomrConfiguration.getUserId(),
+                        dataPlatfomrConfiguration.getPrivateKey()
+                )
+        );
         return ResponseEntity.ok().body(WebResult.success(list));
     }
 
@@ -349,5 +539,100 @@ public class DataResourceController {
         Long tableExportCount = jobInfoRepositoryForResource.countByType("库表导出");
         list.add(new JobStat("汇总", fileImportCount, tableImportCount, realtimeImportCount, realtimeGovernCount, fileUploadCount, tableExportCount));
         return ResponseEntity.ok().body(WebResult.success(list));
+    }
+
+    @GetMapping("/x2/catalog")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<JobStat>>> catalogX2() {
+        List<JobStat> list = new ArrayList<>();
+        Long fileImportCount = jobInfoRepositoryForResource.countByType("文件导入");
+        Long tableImportCount = jobInfoRepositoryForResource.countByType("库表导入");
+        Long realtimeImportCount = stubServiceJobRepository.countByType("0");
+        Long realtimeGovernCount = stubServiceJobRepository.countByType("1");
+        Long fileUploadCount = jobInfoRepositoryForResource.countByType("文件上传");
+        Long tableExportCount = jobInfoRepositoryForResource.countByType("库表导出");
+        list.add(new JobStat("汇总", fileImportCount, tableImportCount, realtimeImportCount, realtimeGovernCount, fileUploadCount, tableExportCount));
+        return ResponseEntity.ok().body(WebResult.success(list));
+    }
+
+    /**
+     * 对接数据中台 1.x 版本的资源目录展示方法
+     *
+     * @author wangjingdong
+     * @date 2021/5/28 10:12
+     */
+    @GetMapping("/catalog")
+    @ResponseBody
+    public ResponseEntity<ArrayList<TreeObject>> catalog() throws NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+        ArrayList<TreeObject> list = new ArrayList<>();
+        HttpHeaders requestHeaders = new HttpHeaders();
+        String token = AKSK.getToken(
+                dataPlatfomrConfiguration.getAddress(),
+                AKSK.getCipherText(
+                        dataPlatfomrConfiguration.getUserId(),
+                        dataPlatfomrConfiguration.getPrivateKey()
+                )
+        );
+        requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
+        HttpEntity<Object> request = new HttpEntity<>(null, requestHeaders);
+        String treeBody = restTemplate
+                .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-tag-service/v1/resources/datatag-trees",
+                        HttpMethod.GET, request, String.class).getBody();
+        assert treeBody != null;
+        JSONObject treeJson = new JSONObject(treeBody);
+        JSONArray treeData = ((JSONObject) treeJson.get("data")).getJSONArray("data");
+        HashMap<Long, TreeObject> longTreeObjectHashMap = new HashMap<>();
+        for (Object tree : treeData) {
+            JSONObject jsonObject = (JSONObject) tree;
+            long treeId = jsonObject.getLong("id");
+            String treeName = jsonObject.getString("name");
+            longTreeObjectHashMap.put(jsonObject.getLong("id"), new TreeObject(treeName, treeId, null, new ArrayList<>(), null, false, false, false));
+
+            String tagBody = restTemplate
+                    .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-tag-service/v1/resources/datatag-tags/names?treeId=" + jsonObject.getLong("id") + "&hasAllNodes=true",
+                            HttpMethod.GET, request, String.class).getBody();
+            assert tagBody != null;
+            JSONObject tagJson = new JSONObject(tagBody);
+            JSONArray tagData = tagJson.getJSONArray("data");
+            ArrayList<TreeObject> topList = new ArrayList<>();
+            for (Object tagObject : tagData) {
+                JSONObject tag = (JSONObject) tagObject;
+                if (tag.get("parentId").toString().equals("null")) {
+                    TreeObject t = new TreeObject(tag.getString("name"), tag.getLong("id"), null, null, null, false, false, false);
+                    topList.add(t);
+                    longTreeObjectHashMap.get(treeId).addChild(t);
+                }
+            }
+            for (TreeObject treeObject : topList) {
+                treeObject.setChildren(getSubList(treeObject.getId(), tagData));
+            }
+        }
+        for (Map.Entry<Long, TreeObject> longTreeObjectEntry : longTreeObjectHashMap.entrySet()) {
+            list.add(longTreeObjectEntry.getValue());
+        }
+        return ResponseEntity.ok().body(list);
+    }
+
+    private List<TreeObject> getSubList(Long id, JSONArray tagData) {
+        ArrayList<TreeObject> childList = new ArrayList<>();
+        String pid;
+
+        for (Object tagObject : tagData) {
+            JSONObject tag = (JSONObject) tagObject;
+            pid = tag.get("parentId").toString();
+            if (Long.toString(id).equals(pid)) {
+                childList.add(new TreeObject(tag.getString("name"), tag.getLong("id"), null, null, null, false, false, false));
+            }
+        }
+
+        for (TreeObject treeObject : childList) {
+            treeObject.setChildren(getSubList(treeObject.getId(), tagData));
+        }
+
+        if (childList.size() == 0) {
+            return null;
+        }
+
+        return childList;
     }
 }
