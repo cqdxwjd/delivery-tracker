@@ -73,10 +73,11 @@ public class HiveReader extends Reader {
             Path path = new Path(file);
             try {
                 FileSystem fs = path.getFileSystem(jobConf);
-                FileInputFormat<Writable, Writable> fileInputFormat = (FileInputFormat<Writable, Writable>) inputFormat.newInstance();
+//                FileInputFormat<Writable, Writable> fileInputFormat = (FileInputFormat<Writable, Writable>) inputFormat.newInstance();
+                InputFormat<Writable, Writable> inputFormat = this.inputFormat.newInstance();
                 long filelen = fs.getFileStatus(path).getLen();
                 FileSplit split = new FileSplit(path, 0, filelen, (String[]) null);
-                RecordReader<Writable, Writable> reader = fileInputFormat.getRecordReader(split, jobConf, Reporter.NULL);
+                RecordReader<Writable, Writable> reader = inputFormat.getRecordReader(split, jobConf, Reporter.NULL);
                 Writable key = reader.createKey();
                 Writable value = reader.createValue();
                 while (reader.next(key, value)) {
@@ -90,6 +91,10 @@ public class HiveReader extends Reader {
 
                     for (int i = 0, len = partitionValueCount; i < len; i++) {
                         record.addField(partitionValues.get(i));
+                    }
+                    // 最多读取 10000 条数据
+                    if (recordCollector.getMetric().getReadCount().get() > 9999) {
+                        break;
                     }
                     recordCollector.send(record);
                 }

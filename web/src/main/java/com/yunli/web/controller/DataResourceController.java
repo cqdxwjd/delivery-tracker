@@ -4,6 +4,8 @@ import com.yunli.bigdata.dsep.foundation.CustomHttpHeaderNames;
 import com.yunli.bigdata.dsep.foundation.WebResult;
 import com.yunli.common.json.JSONArray;
 import com.yunli.common.json.JSONObject;
+import com.yunli.data.sync.config.JobConfig;
+import com.yunli.data.sync.config.PluginConfig;
 import com.yunli.web.config.*;
 import com.yunli.web.doman.OozieCoordJobs;
 import com.yunli.web.dto.*;
@@ -25,6 +27,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import com.yunli.data.sync.core.HData;
+
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -218,7 +222,19 @@ public class DataResourceController {
             result = WebResult.success(list);
             result.setCount(count);
         } else {
-            result = WebResult.success(list.subList((page - 1) * limit, page * limit));
+//            if (list.size() < 20) {
+//                result = WebResult.success(list);
+//                result.setCount(list.size());
+//                return ResponseEntity.ok().body(result);
+//            }
+            int num = list.size() / limit;
+            if (page <= num) {
+                result = WebResult.success(list.subList((page - 1) * limit, page * limit));
+            } else if (page == num + 1) {
+                result = WebResult.success(list.subList((page - 1) * limit, list.size() % limit + (page - 1) * limit));
+            } else {
+                result = WebResult.success(list.subList(0, list.size() % limit));
+            }
             result.setCount(list.size());
         }
         return ResponseEntity.ok().body(result);
@@ -307,7 +323,15 @@ public class DataResourceController {
                         dataPlatfomrConfiguration.getPrivateKey()
                 )
         );
-        return ResponseEntity.ok().body(WebResult.success(list));
+        System.setProperty("hdata.conf.dir", "data-sync/src/main/conf");
+        HData hdata = new HData();
+        JobConfig jobConfig = new JobConfig("data-sync/src/main/job-examples/hive-csv.xml");
+        PluginConfig readerConfig = jobConfig.getReaderConfig();
+        PluginConfig writerConfig = jobConfig.getWriterConfig();
+        readerConfig.setString("table", nameEn);
+        writerConfig.setString("path", "/Users/wangjingdong/Desktop");
+        hdata.start(jobConfig);
+        return ResponseEntity.ok().body(WebResult.success(null));
     }
 
     @RequestMapping("/document")

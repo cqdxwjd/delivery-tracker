@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<job id="">
+    <reader name="hive">
+        <metastoreUris>thrift://172.30.1.233:9083</metastoreUris>
+        <database>bdsp</database>
+        <table>student_orc_snappy_without_partition</table>
+        <!--        <table>student</table>-->
+        <!--        <partitions>pdate=2021-05-22</partitions>-->
+        <partitions></partitions>
+        <hadoopUser>admin</hadoopUser>
+        <parallelism>1</parallelism>
+    </reader>
+
+    <writer name="csv">
+        <path></path>
+        <parallelism>1</parallelism>
+    </writer>
+</job>

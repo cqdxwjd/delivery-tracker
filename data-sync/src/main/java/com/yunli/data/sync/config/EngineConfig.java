@@ -2,11 +2,10 @@ package com.yunli.data.sync.config;
 
 import java.util.List;
 
-import opensource.hdata.common.Constants;
-import opensource.hdata.exception.HDataException;
-import opensource.hdata.util.Utils;
-import opensource.hdata.util.XMLUtils;
-
+import com.yunli.data.sync.common.Constants;
+import com.yunli.data.sync.exception.HDataException;
+import com.yunli.data.sync.util.Utils;
+import com.yunli.data.sync.util.XMLUtils;
 import org.jdom2.Element;
 
 public class EngineConfig extends Configuration {

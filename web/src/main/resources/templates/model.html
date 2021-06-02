@@ -62,6 +62,7 @@
             ],//过滤项配置
             'done': function (filters) {
                 //结果回调
+                console.log(filters);
             }
         });
 
@@ -123,8 +124,8 @@
                 url: url,    //后台数据请求地址
                 type: "get",
                 async: false,
-                success: function (resut) {
-                    data = resut;
+                success: function (result) {
+                    data = result;
                 }
             });
             return data;
@@ -148,13 +149,12 @@
             getCheckData: function () { // 下载数据
                 var checkStatus = table.checkStatus('tables')
                     , data = checkStatus.data;
-                var wb = XLSX.utils.book_new();
                 for (let i = 0; i < data.length; i++) {
                     data1 = getData('/table/' + data[i]['nameEn']);
-                    var sheet = XLSX.utils.json_to_sheet(data1);
-                    let csv = XLSX.utils.sheet_to_csv(sheet);
-                    XLSX.utils.book_append_sheet(wb, sheet, "数据表结构");
-                    XLSX.writeFile(wb, "数据表结构.xlsx");
+                    // var sheet = XLSX.utils.json_to_sheet(data1);
+                    // let csv = XLSX.utils.sheet_to_csv(sheet);
+                    // XLSX.utils.book_append_sheet(wb, sheet, "数据表结构");
+                    // XLSX.writeFile(wb, "数据表结构.xlsx");
                 }
             },
             createModel: function () {

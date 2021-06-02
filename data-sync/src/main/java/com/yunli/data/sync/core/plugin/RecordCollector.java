@@ -19,6 +19,10 @@ public class RecordCollector {
         metric.getReadCount().incrementAndGet();
     }
 
+    public Metric getMetric() {
+        return metric;
+    }
+
     public void send(Record[] records) {
         storage.put(records);
     }

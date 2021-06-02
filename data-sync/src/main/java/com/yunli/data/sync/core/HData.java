@@ -55,7 +55,7 @@ public class HData {
             readerConfigList = spliter.split(jobConfig);
             if (readerConfigList == null || readerConfigList.size() == 0) {
                 LOG.info("Job Finished.");
-                System.exit(0);
+                throw new HDataException("Job Finished.");
             }
         } else if (readerConfig.getParallelism() > 1) {
             throw new HDataException("Reader parallelism is " + readerConfig.getParallelism() + ", but can not find splitter.");
