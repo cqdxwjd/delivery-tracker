@@ -6,6 +6,7 @@ import com.yunli.common.json.JSONArray;
 import com.yunli.common.json.JSONObject;
 import com.yunli.data.sync.config.JobConfig;
 import com.yunli.data.sync.config.PluginConfig;
+import com.yunli.data.sync.core.HData;
 import com.yunli.web.config.*;
 import com.yunli.web.doman.OozieCoordJobs;
 import com.yunli.web.dto.*;
@@ -14,6 +15,8 @@ import com.yunli.web.service.DataResourceService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -26,13 +29,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
-import com.yunli.data.sync.core.HData;
 
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
@@ -54,6 +56,8 @@ public class DataResourceController {
     private final TopicRepository topicRepository;
     private final JobInfoRepositoryForResource jobInfoRepositoryForResource;
     private final StubServiceJobRepository stubServiceJobRepository;
+    private final HiveCSVConfiguration hiveCSVConfiguration;
+    private final ResourceLoader resourceLoader;
 
     @Autowired
     public DataResourceController(DataResourceService dataResourceService,
@@ -65,7 +69,9 @@ public class DataResourceController {
                                   OozieJdbcTemplateFactory oozieJdbcTemplateFactory,
                                   TopicRepository topicRepository,
                                   JobInfoRepositoryForResource jobInfoRepositoryForResource,
-                                  StubServiceJobRepository stubServiceJobRepository) {
+                                  StubServiceJobRepository stubServiceJobRepository,
+                                  HiveCSVConfiguration hiveCSVConfiguration,
+                                  ResourceLoader resourceLoader) {
         this.dataResourceService = dataResourceService;
         this.documentResourceRepository = documentResourceRepository;
         this.restTemplate = restTemplate;
@@ -76,6 +82,8 @@ public class DataResourceController {
         this.topicRepository = topicRepository;
         this.jobInfoRepositoryForResource = jobInfoRepositoryForResource;
         this.stubServiceJobRepository = stubServiceJobRepository;
+        this.hiveCSVConfiguration = hiveCSVConfiguration;
+        this.resourceLoader = resourceLoader;
     }
 
     @GetMapping("/one")
@@ -313,7 +321,7 @@ public class DataResourceController {
 
     @GetMapping("/table/{nameEn}")
     @ResponseBody
-    public ResponseEntity<WebResult<List<Object>>> getData(@PathVariable(name = "nameEn") String nameEn) throws NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException {
+    public ResponseEntity<WebResult<List<Object>>> getData(@PathVariable(name = "nameEn") String nameEn) throws NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException, IOException {
         ArrayList<Object> list = new ArrayList<>();
         HttpHeaders requestHeaders = new HttpHeaders();
         String token = AKSK.getToken(
@@ -323,13 +331,18 @@ public class DataResourceController {
                         dataPlatfomrConfiguration.getPrivateKey()
                 )
         );
-        System.setProperty("hdata.conf.dir", "data-sync/src/main/conf");
+//        Resource conf = resourceLoader.getResource("classpath:data-sync/conf");
+        Resource resource = resourceLoader.getResource("classpath:data-sync/job-examples/hive-csv.xml");
+//        System.setProperty("hdata.conf.dir", conf.getURI().getPath());
         HData hdata = new HData();
-        JobConfig jobConfig = new JobConfig("data-sync/src/main/job-examples/hive-csv.xml");
+        JobConfig jobConfig = new JobConfig(resource.getInputStream());
         PluginConfig readerConfig = jobConfig.getReaderConfig();
         PluginConfig writerConfig = jobConfig.getWriterConfig();
         readerConfig.setString("table", nameEn);
-        writerConfig.setString("path", "/Users/wangjingdong/Desktop");
+        readerConfig.setString("metastoreUris", hiveCSVConfiguration.getMetastoreUri());
+        readerConfig.setString("database", hiveCSVConfiguration.getDatabase());
+        readerConfig.setString("parallelism", hiveCSVConfiguration.getReaderParallelism());
+        writerConfig.setString("path", hiveCSVConfiguration.getWriterPath());
         hdata.start(jobConfig);
         return ResponseEntity.ok().body(WebResult.success(null));
     }

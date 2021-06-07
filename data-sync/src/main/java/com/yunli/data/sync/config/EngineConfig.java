@@ -7,6 +7,7 @@ import com.yunli.data.sync.exception.HDataException;
 import com.yunli.data.sync.util.Utils;
 import com.yunli.data.sync.util.XMLUtils;
 import org.jdom2.Element;
+import org.springframework.core.io.ClassPathResource;
 
 public class EngineConfig extends Configuration {
 
@@ -20,7 +21,8 @@ public class EngineConfig extends Configuration {
         EngineConfig conf = new EngineConfig();
         Element root = null;
         try {
-            root = XMLUtils.load(Utils.getConfigDir() + Constants.HDATA_XML);
+//            root = XMLUtils.load(Utils.getConfigDir() + Constants.HDATA_XML);
+            root = XMLUtils.load(new ClassPathResource("conf/hdata.xml").getInputStream());
         } catch (Exception e) {
             throw new HDataException("Init EngineConf error!", e);
         }

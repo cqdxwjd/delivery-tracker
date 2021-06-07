@@ -1,9 +1,8 @@
 package com.yunli.data.sync;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
 
 import com.yunli.data.sync.config.JobConfig;
 import com.yunli.data.sync.config.PluginConfig;
@@ -17,6 +16,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.core.io.ClassPathResource;
 
 public class CliDriver {
 
@@ -92,21 +92,21 @@ public class CliDriver {
         try {
             cmd = parser.parse(options, args);
             String jobXmlPath = cmd.getOptionValue(XML_FILE);
-            JobConfig jobConfig = new JobConfig(jobXmlPath);
+//            JobConfig jobConfig = new JobConfig(jobXmlPath);
             Map<String, String> vars = new HashMap<String, String>();
             Properties properties = cmd.getOptionProperties(HDATA_VARS);
             for (String key : properties.stringPropertyNames()) {
                 vars.put(key, properties.getProperty(key));
             }
 
-            final PluginConfig readerConfig = jobConfig.getReaderConfig();
-            final PluginConfig writerConfig = jobConfig.getWriterConfig();
+//            final PluginConfig readerConfig = jobConfig.getReaderConfig();
+//            final PluginConfig writerConfig = jobConfig.getWriterConfig();
 
-            cliDriver.replaceConfigVars(readerConfig, vars);
-            cliDriver.replaceConfigVars(writerConfig, vars);
+//            cliDriver.replaceConfigVars(readerConfig, vars);
+//            cliDriver.replaceConfigVars(writerConfig, vars);
 
             HData hData = new HData();
-            hData.start(jobConfig);
+//            hData.start(jobConfig);
         } catch (ParseException e) {
             cliDriver.printHelp(options);
             System.exit(-1);

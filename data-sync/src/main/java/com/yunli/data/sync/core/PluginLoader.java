@@ -12,6 +12,7 @@ import com.yunli.data.sync.exception.HDataException;
 import com.yunli.data.sync.util.Utils;
 import com.yunli.data.sync.util.XMLUtils;
 import org.jdom2.Element;
+import org.springframework.core.io.ClassPathResource;
 
 public class PluginLoader {
 
@@ -32,7 +33,8 @@ public class PluginLoader {
 
         Element root;
         try {
-            root = XMLUtils.load(Utils.getConfigDir() + Constants.PLUGINS_XML);
+//            root = XMLUtils.load(Utils.getConfigDir() + Constants.PLUGINS_XML);
+            root = XMLUtils.load(new ClassPathResource("conf/plugins.xml").getInputStream());
         } catch (Exception e) {
             throw new HDataException(e);
         }

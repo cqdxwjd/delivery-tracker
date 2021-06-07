@@ -13,7 +13,7 @@
     </reader>
 
     <writer name="csv">
-        <path></path>
+        <path>/tmp</path>
         <parallelism>1</parallelism>
     </writer>
 </job>

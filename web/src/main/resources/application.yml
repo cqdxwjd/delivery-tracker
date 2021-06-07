@@ -31,3 +31,10 @@ oozie:
     url: jdbc:mysql://172.30.1.235:3306/oozie
     username: root
     password: Root123@
+
+# hive 导出数据成 csv 文件配置信息
+hive-csv:
+  metastoreUri: thrift://172.30.1.233:9083
+  database: bdsp
+  readerParallelism: 1
+  writerPath: /tmp

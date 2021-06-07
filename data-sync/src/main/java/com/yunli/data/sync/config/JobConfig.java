@@ -10,6 +10,8 @@ import com.yunli.data.sync.exception.HDataException;
 import com.yunli.data.sync.util.XMLUtils;
 import org.jdom2.Element;
 
+import java.io.InputStream;
+
 public class JobConfig extends Configuration {
 
     private Element root;
@@ -21,12 +23,12 @@ public class JobConfig extends Configuration {
         super();
     }
 
-    public JobConfig(String jobXmlPath) {
+    public JobConfig(InputStream inputStream) {
         this();
         try {
-            root = XMLUtils.load(jobXmlPath);
+            root = XMLUtils.load(inputStream);
         } catch (Exception e) {
-            throw new HDataException("Can not load job xml file: " + jobXmlPath, e);
+            throw new HDataException("Can not load job xml file: " + inputStream, e);
         }
     }
 
