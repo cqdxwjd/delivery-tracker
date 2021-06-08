@@ -6,6 +6,10 @@ import com.yunli.data.sync.core.JobContext;
 import com.yunli.data.sync.core.plugin.Record;
 import com.yunli.data.sync.core.plugin.Writer;
 import com.yunli.data.sync.exception.HDataException;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -19,8 +23,6 @@ import java.util.List;
  */
 public class CSVWriter extends Writer {
 
-    private PluginConfig writerConfig;
-    private PluginConfig readerConfig;
     private String[] strArray;
     private BufferedWriter bw;
 
@@ -28,15 +30,19 @@ public class CSVWriter extends Writer {
 
     @Override
     public void prepare(JobContext context, PluginConfig writerConfig) {
-        this.writerConfig = writerConfig;
-        this.readerConfig = context.getJobConfig().getReaderConfig();
+        PluginConfig readerConfig = context.getJobConfig().getReaderConfig();
 
         String path = writerConfig.getString("path");
         String table = readerConfig.getString("table");
 
+        Path hdfsPath = new Path(path + "/delivery-tracker/" + table + ".csv");
+        Configuration conf = new Configuration();
         try {
-            bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path + "/" + table + ".csv"), StandardCharsets.UTF_8));
-        } catch (FileNotFoundException e) {
+            FileSystem fs = hdfsPath.getFileSystem(conf);
+            FSDataOutputStream output = fs.create(hdfsPath);
+            bw = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
+//            bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path + "/" + table + ".csv"), StandardCharsets.UTF_8));
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
