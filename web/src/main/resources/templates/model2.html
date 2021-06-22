@@ -1,0 +1,242 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>数据模型</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" media="all" th:href="@{/layui/css/layui.css}"/>
+    <link rel="stylesheet" media="all" th:href="@{/layui/css/modules/tableFilter/default/tableFilter.css}"/>
+    <link rel="shortcut icon" th:href="@{/image/logo.svg}"/>
+</head>
+<body>
+<div class="layui-btn-group demoTable">
+    <button class="layui-btn" data-type="getCheckSchema">下载选中表结构</button>
+    <button class="layui-btn" data-type="getCheckData">下载选中表数据</button>
+    <!--    <button class="layui-btn" data-type="createModel">新建数据表</button>-->
+</div>
+
+<table class="layui-hide" id="tables" lay-filter="tables"></table>
+
+<script charset="utf-8" type="text/javascript" th:src="@{/layui/layui.js}"></script>
+<script lang="javascript" th:src="@{/xlsx/xlsx.full.min.js}"></script>
+<script>
+    layui.config({base: '/layui/others/js/'}).extend({tableFilter: 'tableFilter'});
+
+    layui.use(['form', 'element', 'table', 'tableFilter', 'layer'], function () {
+        var form = layui.form;
+        var element = layui.element;
+        var table = layui.table;
+        var tableFilter = layui.tableFilter;
+        var $ = layui.$;
+        var layer = layui.layer;
+
+        table.render({
+            elem: '#tables',
+            url: '/table/all/2x',
+            cellMinWidth: 150,
+            page: {limit: 20},
+            cols: [
+                [
+                    {type: 'checkbox'}
+                    , {field: 'id', title: '数据表 ID'}
+                    , {field: 'nameEn', title: '数据表英文名', sort: true}
+                    , {field: 'nameCn', title: '数据表中文名', sort: true}
+                    , {field: 'status', title: '数据表状态'}
+                    , {field: 'count', title: '数据量', sort: true}
+                    , {field: 'createTime', title: '创建时间', sort: true}
+                ]
+            ],
+            done: function (res, curr, count) {
+                console.log("监听where:", this.where);
+
+                //非常重要！如果使table.reload()后依然使用过滤，就必须将过滤组件也reload()一下
+                tableFilterIns.reload();
+            }
+        });
+
+        // 参考: https://gitee.com/jovic/TableFilter
+        var tableFilterIns = tableFilter.render({
+            'elem': '#tables',//table的选择器
+            'mode': 'api',//过滤模式
+            'filters': [
+                {field: 'nameEn', type: 'input'}
+            ],//过滤项配置
+            'done': function (filters) {
+                //结果回调
+                console.log(filters);
+            }
+        });
+
+        //监听表格排序问题
+        table.on('sort(tables)', function (obj) { //注：tool是工具条事件名，test是table原始容器的属性 lay-filter="对应的值"
+            console.log(obj.field); //当前排序的字段名
+            console.log(obj.type); //当前排序类型：desc（降序）、asc（升序）、null（空对象，默认排序）
+            console.log(this); //当前排序的 th 对象
+
+            //尽管我们的 table 自带排序功能，但并没有请求服务端。
+            //有些时候，你可能需要根据当前排序的字段，重新向服务端发送请求，从而实现服务端排序，如：
+            table.reload('tables', { //testTable是表格容器id
+                initSort: obj //记录初始排序，如果不设的话，将无法标记表头的排序状态。 layui 2.1.1 新增参数
+                , where: { //请求参数（注意：这里面的参数可任意定义，并非下面固定的格式）
+                    field: obj.field //排序字段
+                    , order: obj.type //排序方式
+                }
+            });
+            tableFilterIns.reload();
+        });
+
+        //单击行勾选checkbox事件
+        var tableDiv;
+        $(document).on("click", ".layui-table-body table.layui-table tbody tr", function () {
+            var index = $(this).attr('data-index');
+            var tableBox = $(this).parents('.layui-table-box');
+            //存在固定列
+            if (tableBox.find(".layui-table-fixed.layui-table-fixed-l").length > 0) {
+                tableDiv = tableBox.find(".layui-table-fixed.layui-table-fixed-l");
+            } else {
+                tableDiv = tableBox.find(".layui-table-body.layui-table-main");
+            }
+            //获取已选中列并取消选中
+            // var trs = tableDiv.find(".layui-unselect.layui-form-checkbox.layui-form-checked").parent().parent().parent();
+            // for (var i = 0; i < trs.length; i++) {
+            //     var ind = $(trs[i]).attr("data-index");
+            //     if (ind != index) {
+            //         var checkCell = tableDiv.find("tr[data-index=" + ind + "]").find("td div.laytable-cell-checkbox div.layui-form-checkbox I");
+            //         if (checkCell.length > 0) {
+            //             checkCell.click();
+            //         }
+            //     }
+            // }
+            //选中单击行
+            var checkCell = tableDiv.find("tr[data-index=" + index + "]").find("td div.laytable-cell-checkbox div.layui-form-checkbox I");
+            // if (checkCell.length > 0 & trs.length === 1) {
+            //     checkCell.click();
+            // }
+            checkCell.click();
+        });
+        $(document).on("click", "td div.laytable-cell-checkbox div.layui-form-checkbox", function (e) {
+            e.stopPropagation();
+        });
+
+        // 异步获取后台数据
+        function getData(url) {
+            var data = [];
+            $.ajax({
+                url: url,    //后台数据请求地址
+                type: "get",
+                async: false,
+                cache: false,
+                success: function (result) {
+                    data = result;
+                }
+            });
+            return data;
+        }
+
+        // 按钮点击事件
+        var active = {
+            getCheckSchema: function () { //下载选中表结构
+                var checkStatus = table.checkStatus('tables')
+                    , data = checkStatus.data;
+                var wb = XLSX.utils.book_new();
+                var dataArray = [];
+                for (let i = 0; i < data.length; i++) {
+                    data1 = getData('/table/columns/2x/' + data[i]['id']).data;
+                    dataArray = dataArray.concat(data1);
+                }
+                var sheet = XLSX.utils.json_to_sheet(dataArray);
+                XLSX.utils.book_append_sheet(wb, sheet, "数据表结构");
+                XLSX.writeFile(wb, "数据表结构.xlsx");
+            },
+            getCheckData: function () { // 下载数据
+                var checkStatus = table.checkStatus('tables')
+                    , data = checkStatus.data;
+                for (let i = 0; i < data.length; i++) {
+                    let tableName = data[i]['nameEn'];
+                    data1 = getData('/table/2x/' + tableName);
+                    let result = data1.data;
+                    result = "\ufeff" + result;
+                    var blob = new Blob([result], {type: 'application/vnd.ms-excel'});
+                    var downloadUrl = URL.createObjectURL(blob);
+                    var a = document.createElement("a");
+                    a.href = downloadUrl;
+                    a.download = tableName + ".csv";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                }
+
+            },
+            createModel: function () {
+                // 弹出全屏
+                var index = layer.open({
+                    type: 2,
+                    content: '/createTableControl',
+                    area: ['320px', '195px'],
+                    maxmin: true
+                });
+                layer.full(index);
+            }
+        };
+
+        $('.demoTable .layui-btn').on('click', function () {
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+
+        // 复制 excel 数据到 html 表格
+        $(document).ready(function () {
+            $(document.body).bind({
+                paste: function (e) {
+                    if (window.clipboardData) {
+                        return;
+                    }
+                    var clipboardData = e.originalEvent.clipboardData;
+                    processData(clipboardData);
+                }
+            });
+
+            document.onkeyup = function (e) {
+                if (window.clipboardData) {
+                    e = window.event || e;
+                    var keyCode = e.keyCode || e.which || e.charCode;
+                    var ctrlKey = e.ctrlKey || e.metaKey;
+                    if (ctrlKey && keyCode === 86) {
+                        var clipboardData = window.clipboardData;
+                        processData(clipboardData);
+                    }
+                }
+                return false;
+            }
+
+            var processData = function (clipboardData) {
+                $('table#dgBudget>tbody>tr.datarow').remove();
+                var data = clipboardData.getData('Text').split('\n');
+                var dataHtml = '';
+                for (var i = 0; i < data.length; i++) {
+                    if (!data[i]) {
+                        continue;
+                    }
+                    var bugdetData = data[i].split('\t');
+                    dataHtml += '<tr class="datarow">';
+                    dataHtml += '<td>' + (bugdetData[0] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[1] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[2] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[3] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[4] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[5] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[6] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[7] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[8] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[9] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[10] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[11] || '&nbsp;') + '</td>';
+                    dataHtml += '<td>' + (bugdetData[12] || '&nbsp;') + '</td>';
+                    dataHtml += '</tr>';
+                }
+                $('table#dgBudget>tbody>tr').after(dataHtml);
+            };
+        });
+    });
+</script>
+</body>
+</html>

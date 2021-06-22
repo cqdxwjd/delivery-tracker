@@ -50,7 +50,7 @@ public class DataResourceController {
     private final DocumentResourceRepository documentResourceRepository;
     private final RestTemplate restTemplate;
     private final DocumentCatalogRepository documentCatalogRepository;
-    private final DataPlatfomrConfiguration dataPlatfomrConfiguration;
+    private final DataPlatformConfiguration dataPlatformConfiguration;
     private final HueJdbcTemplateFactory hueJdbcTemplateFactory;
     private final OozieJdbcTemplateFactory oozieJdbcTemplateFactory;
     private final TopicRepository topicRepository;
@@ -64,7 +64,7 @@ public class DataResourceController {
                                   DocumentResourceRepository documentResourceRepository,
                                   RestTemplate restTemplate,
                                   DocumentCatalogRepository documentCatalogRepository,
-                                  DataPlatfomrConfiguration dataPlatfomrConfiguration,
+                                  DataPlatformConfiguration dataPlatformConfiguration,
                                   HueJdbcTemplateFactory hueJdbcTemplateFactory,
                                   OozieJdbcTemplateFactory oozieJdbcTemplateFactory,
                                   TopicRepository topicRepository,
@@ -76,7 +76,7 @@ public class DataResourceController {
         this.documentResourceRepository = documentResourceRepository;
         this.restTemplate = restTemplate;
         this.documentCatalogRepository = documentCatalogRepository;
-        this.dataPlatfomrConfiguration = dataPlatfomrConfiguration;
+        this.dataPlatformConfiguration = dataPlatformConfiguration;
         this.hueJdbcTemplateFactory = hueJdbcTemplateFactory;
         this.oozieJdbcTemplateFactory = oozieJdbcTemplateFactory;
         this.topicRepository = topicRepository;
@@ -109,6 +109,9 @@ public class DataResourceController {
     // 合体页
     @GetMapping("/")
     public String index() {
+        if(dataPlatformConfiguration.getVersion()==2){
+            return "index2";
+        }
         return "index";
     }
 
@@ -121,10 +124,10 @@ public class DataResourceController {
         ArrayList<DataResourceDto> list = new ArrayList<>();
         HttpHeaders requestHeaders = new HttpHeaders();
         String token = AKSK.getToken(
-                dataPlatfomrConfiguration.getAddress(),
+                dataPlatformConfiguration.getAddress(),
                 AKSK.getCipherText(
-                        dataPlatfomrConfiguration.getUserId(),
-                        dataPlatfomrConfiguration.getPrivateKey()
+                        dataPlatformConfiguration.getUserId(),
+                        dataPlatformConfiguration.getPrivateKey()
                 )
         );
         requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
@@ -133,18 +136,18 @@ public class DataResourceController {
         int count = 0;
         if (field.equals("status") && nameEn.equals("")) {
             body = restTemplate
-                    .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources?pageNum=" + page + "&pageSize=" + limit,
+                    .exchange(dataPlatformConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources?pageNum=" + page + "&pageSize=" + limit,
                             HttpMethod.GET, request, String.class).getBody();
             JSONObject tablesJson = new JSONObject(body);
             count = tablesJson.getInt("totalElementCount");
         } else {
             String tablesBody = restTemplate
-                    .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources",
+                    .exchange(dataPlatformConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources",
                             HttpMethod.GET, request, String.class).getBody();
             JSONObject tablesJson = new JSONObject(tablesBody);
             count = tablesJson.getInt("totalElementCount");
             body = restTemplate
-                    .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources?pageNum=1" + "&pageSize=" + count,
+                    .exchange(dataPlatformConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources?pageNum=1" + "&pageSize=" + count,
                             HttpMethod.GET, request, String.class).getBody();
         }
 
@@ -286,16 +289,16 @@ public class DataResourceController {
         ArrayList<ResourceColumnDto> list = new ArrayList<>();
         HttpHeaders requestHeaders = new HttpHeaders();
         String token = AKSK.getToken(
-                dataPlatfomrConfiguration.getAddress(),
+                dataPlatformConfiguration.getAddress(),
                 AKSK.getCipherText(
-                        dataPlatfomrConfiguration.getUserId(),
-                        dataPlatfomrConfiguration.getPrivateKey()
+                        dataPlatformConfiguration.getUserId(),
+                        dataPlatformConfiguration.getPrivateKey()
                 )
         );
         requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
         HttpEntity<Object> request = new HttpEntity<>(null, requestHeaders);
         String treeBody = restTemplate
-                .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources/" + id + "?returnColumn=true",
+                .exchange(dataPlatformConfiguration.getAddress() + "/x-data-resource-service/v1/resources/data-resources/" + id + "?returnColumn=true",
                         HttpMethod.GET, request, String.class).getBody();
         JSONObject jsonObject = new JSONObject(treeBody);
         JSONObject data = jsonObject.getJSONObject("data");
@@ -325,10 +328,10 @@ public class DataResourceController {
         ArrayList<Object> list = new ArrayList<>();
         HttpHeaders requestHeaders = new HttpHeaders();
         String token = AKSK.getToken(
-                dataPlatfomrConfiguration.getAddress(),
+                dataPlatformConfiguration.getAddress(),
                 AKSK.getCipherText(
-                        dataPlatfomrConfiguration.getUserId(),
-                        dataPlatfomrConfiguration.getPrivateKey()
+                        dataPlatformConfiguration.getUserId(),
+                        dataPlatformConfiguration.getPrivateKey()
                 )
         );
 //        Resource conf = resourceLoader.getResource("classpath:data-sync/conf");
@@ -357,16 +360,16 @@ public class DataResourceController {
         long count = documentResourceRepository.count();
         HttpHeaders requestHeaders = new HttpHeaders();
         String token = AKSK.getToken(
-                dataPlatfomrConfiguration.getAddress(),
+                dataPlatformConfiguration.getAddress(),
                 AKSK.getCipherText(
-                        dataPlatfomrConfiguration.getUserId(),
-                        dataPlatfomrConfiguration.getPrivateKey()
+                        dataPlatformConfiguration.getUserId(),
+                        dataPlatformConfiguration.getPrivateKey()
                 )
         );
         requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
         HttpEntity<Object> request = new HttpEntity<>(null, requestHeaders);
         ResponseEntity<String> responseEntity = restTemplate
-                .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/documents",
+                .exchange(dataPlatformConfiguration.getAddress() + "/x-data-resource-service/v1/resources/documents",
                         HttpMethod.GET, request, String.class);
         String body = responseEntity.getBody();
         JSONObject jsonObject = new JSONObject(body);
@@ -400,16 +403,16 @@ public class DataResourceController {
         long count = documentResourceRepository.count();
         HttpHeaders requestHeaders = new HttpHeaders();
         String token = AKSK.getToken(
-                dataPlatfomrConfiguration.getAddress(),
+                dataPlatformConfiguration.getAddress(),
                 AKSK.getCipherText(
-                        dataPlatfomrConfiguration.getUserId(),
-                        dataPlatfomrConfiguration.getPrivateKey()
+                        dataPlatformConfiguration.getUserId(),
+                        dataPlatformConfiguration.getPrivateKey()
                 )
         );
         requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
         HttpEntity<Object> request = new HttpEntity<>(null, requestHeaders);
         ResponseEntity<String> responseEntity = restTemplate
-                .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-resource-service/v1/resources/documents",
+                .exchange(dataPlatformConfiguration.getAddress() + "/x-data-resource-service/v1/resources/documents",
                         HttpMethod.GET, request, String.class);
         String body = responseEntity.getBody();
         JSONObject jsonObject = new JSONObject(body);
@@ -604,16 +607,16 @@ public class DataResourceController {
         ArrayList<TreeObject> list = new ArrayList<>();
         HttpHeaders requestHeaders = new HttpHeaders();
         String token = AKSK.getToken(
-                dataPlatfomrConfiguration.getAddress(),
+                dataPlatformConfiguration.getAddress(),
                 AKSK.getCipherText(
-                        dataPlatfomrConfiguration.getUserId(),
-                        dataPlatfomrConfiguration.getPrivateKey()
+                        dataPlatformConfiguration.getUserId(),
+                        dataPlatformConfiguration.getPrivateKey()
                 )
         );
         requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
         HttpEntity<Object> request = new HttpEntity<>(null, requestHeaders);
         String treeBody = restTemplate
-                .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-tag-service/v1/resources/datatag-trees",
+                .exchange(dataPlatformConfiguration.getAddress() + "/x-data-tag-service/v1/resources/datatag-trees",
                         HttpMethod.GET, request, String.class).getBody();
         assert treeBody != null;
         JSONObject treeJson = new JSONObject(treeBody);
@@ -621,12 +624,12 @@ public class DataResourceController {
         HashMap<Long, TreeObject> longTreeObjectHashMap = new HashMap<>();
         for (Object tree : treeData) {
             JSONObject jsonObject = (JSONObject) tree;
-            long treeId = jsonObject.getLong("id");
+            Integer treeId = jsonObject.getInt("id");
             String treeName = jsonObject.getString("name");
             longTreeObjectHashMap.put(jsonObject.getLong("id"), new TreeObject(treeName, treeId, null, new ArrayList<>(), null, false, false, false));
 
             String tagBody = restTemplate
-                    .exchange(dataPlatfomrConfiguration.getAddress() + "/x-data-tag-service/v1/resources/datatag-tags/names?treeId=" + jsonObject.getLong("id") + "&hasAllNodes=true",
+                    .exchange(dataPlatformConfiguration.getAddress() + "/x-data-tag-service/v1/resources/datatag-tags/names?treeId=" + jsonObject.getLong("id") + "&hasAllNodes=true",
                             HttpMethod.GET, request, String.class).getBody();
             assert tagBody != null;
             JSONObject tagJson = new JSONObject(tagBody);
@@ -635,7 +638,7 @@ public class DataResourceController {
             for (Object tagObject : tagData) {
                 JSONObject tag = (JSONObject) tagObject;
                 if (tag.get("parentId").toString().equals("null")) {
-                    TreeObject t = new TreeObject(tag.getString("name"), tag.getLong("id"), null, null, null, false, false, false);
+                    TreeObject t = new TreeObject(tag.getString("name"), tag.getInt("id"), null, null, null, false, false, false);
                     topList.add(t);
                     longTreeObjectHashMap.get(treeId).addChild(t);
                 }
@@ -650,7 +653,7 @@ public class DataResourceController {
         return ResponseEntity.ok().body(list);
     }
 
-    private List<TreeObject> getSubList(Long id, JSONArray tagData) {
+    private List<TreeObject> getSubList(Integer id, JSONArray tagData) {
         ArrayList<TreeObject> childList = new ArrayList<>();
         String pid;
 
@@ -658,7 +661,7 @@ public class DataResourceController {
             JSONObject tag = (JSONObject) tagObject;
             pid = tag.get("parentId").toString();
             if (Long.toString(id).equals(pid)) {
-                childList.add(new TreeObject(tag.getString("name"), tag.getLong("id"), null, null, null, false, false, false));
+                childList.add(new TreeObject(tag.getString("name"), tag.getInt("id"), null, null, null, false, false, false));
             }
         }
 

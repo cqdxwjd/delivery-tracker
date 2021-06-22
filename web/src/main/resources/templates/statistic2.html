@@ -1,0 +1,224 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>所有统计</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" media="all" th:href="@{/layui/css/layui.css}"></link>
+</head>
+
+<body>
+
+<div class="layui-tab layui-tab-brief" lay-filter="demo">
+    <ul class="layui-tab-title">
+        <li class="table layui-this">数据表统计</li>
+        <li class="document">文件夹统计</li>
+        <li class="catalog">资源目录统计</li>
+        <li class="bus">实时数据信道统计</li>
+        <li class="program">程序开发统计</li>
+        <li class="job">运行作业统计</li>
+        <button class="layui-btn layui-btn-radius layui-btn-lg" onclick="downloadAll();">汇总下载</button>
+    </ul>
+    <div class="layui-tab-content">
+        <div class="layui-tab-item layui-show">
+            <table class="layui-hide" id="table"></table>
+        </div>
+        <div class="layui-tab-item">
+            <table class="layui-hide" id="document"></table>
+        </div>
+        <div class="layui-tab-item">
+            <table class="layui-hide" id="catalog"></table>
+        </div>
+        <div class="layui-tab-item">
+            <table class="layui-hide" id="bus"></table>
+        </div>
+        <div class="layui-tab-item">
+            <table class="layui-hide" id="program"></table>
+        </div>
+        <div class="layui-tab-item">
+            <table class="layui-hide" id="job"></table>
+        </div>
+    </div>
+</div>
+
+<script charset="utf-8" type="text/javascript" th:src="@{/layui/layui.js}"></script>
+<script lang="javascript" th:src="@{/xlsx/xlsx.full.min.js}"></script>
+
+<script>
+    layui.use(['form', 'element', 'table'], function () {
+        var form = layui.form;
+        var element = layui.element;
+        var table = layui.table;
+
+        // 定义函数
+        // 获取sheet
+        window.getSheet = function (url) {
+            return fetch(url).then(function (res) {
+                /* get the data as a json */
+                if (!res.ok) throw new Error("fetch failed");
+                return res.json();
+            }).then(function (ab) {
+                ws = XLSX.utils.json_to_sheet(ab.data);
+                return ws;
+            });
+        }
+
+        window.downloadAll = function () {
+            var tableSheet = getSheet('/table/2x');
+            var documentSheet = getSheet('/document/2x');
+            var programSheet = getSheet('/program/2x');
+            var busSheet = getSheet('/bus/2x');
+            var jobSheet = getSheet('/job/2x');
+            var catalogSheet = getSheet('/catalog/2x');
+
+            var wb = XLSX.utils.book_new();
+            // 使用类似级联的方式下载所有的sheet页，否则可能获取不到sheet页就开始下载
+            tableSheet.then(function (value) {
+                XLSX.utils.book_append_sheet(wb, value, "数据表统计");
+                documentSheet.then(function (value) {
+                    XLSX.utils.book_append_sheet(wb, value, "文件夹统计");
+                    catalogSheet.the(function (value){
+                        XLSX.utils.book_append_sheet(wb, value, "资源目录统计");
+                        busSheet.then(function (value) {
+                            XLSX.utils.book_append_sheet(wb, value, "实时数据信道统计");
+                            programSheet.then(function (value) {
+                                XLSX.utils.book_append_sheet(wb, value, "程序开发统计");
+                                jobSheet.then(function (value) {
+                                    XLSX.utils.book_append_sheet(wb, value, "运行作业统计");
+                                    XLSX.writeFile(wb, "汇总统计.xlsx");
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        }
+
+        window.renderTable = function () {
+            table.render({
+                elem: '#table',
+                url: '/table/2x',
+                cellMinWidth: 150,
+                cols: [
+                    [
+                        {field: 'layer', width: '20%', title: '数据层级', sort: true}
+                        , {field: 'tableCount', width: '20%', title: '数据表总量', sort: true}
+                        , {field: 'blankTableCount', width: '20%', title: '空表数量', sort: true}
+                        , {field: 'unrelatedTableCount', width: '20%', title: '未关联目录的数据表数量', sort: true}
+                        , {field: 'unpublishedTableCount', title: '未发布的数据表数量', width: '20%', sort: true}
+                    ]
+                ]
+            });
+        }
+
+        window.renderProgram = function () {
+            table.render({
+                elem: '#program',
+                url: '/program/2x',
+                cellMinWidth: 150,
+                cols: [
+                    [
+                        {field: 'type', title: ''}
+                        , {field: 'oozieSchduleCount', title: '配置的Oozie调度任务总数'}
+                        , {field: 'runningOozieSchduleCount', title: '运行中的Oozie调度任务数'}
+                        , {field: 'suspendedOozieSchduleCount', title: '暂停中的Oozie调度任务数'}
+                        , {field: 'oozieJobCount', title: '配置的Oozie工作流总数'}
+                        , {field: 'hiveScriptCount', title: 'Hive脚本数'}
+                        , {field: 'shellScriptCount', title: 'Shell脚本数'}
+                    ]
+                ]
+            });
+        }
+
+        window.renderDocument = function () {
+            table.render({
+                elem: '#document',
+                url: '/document/2x',
+                cellMinWidth: 150,
+                cols: [
+                    [
+                        {field: 'type', width: '25%', title: ''}
+                        , {field: 'count', width: '25%', title: '文件夹数'}
+                        , {field: 'nullCount', width: '25%', title: '空文件夹数'}
+                        , {field: 'unMountedCount', width: '25%', title: '未挂目录的文件夹数'}
+                    ]
+                ]
+            });
+        }
+
+        window.renderBus = function () {
+            table.render({
+                elem: '#bus',
+                url: '/v2/bus',
+                cellMinWidth: 150,
+                cols: [
+                    [
+                        {field: 'type', title: ''}
+                        , {field: 'count', title: '信道数'}
+                        , {field: 'unMountedCount', title: '未挂目录的信道数'}
+                    ]
+                ]
+            });
+        }
+
+        window.renderJob = function () {
+            table.render({
+                elem: '#job',
+                url: '/job/2x',
+                cellMinWidth: 150,
+                cols: [
+                    [
+                        {field: 'type', title: ''}
+                        , {field: 'fileImportCount', title: '文件导入作业数'}
+                        , {field: 'tableImportCount', title: '库表导入作业数'}
+                        , {field: 'realtimeImportCount', title: '实时数据作业数'}
+                        , {field: 'realtimeGovernCount', title: '实时数据开发作业数'}
+                        , {field: 'fileUploadCount', title: '文件上传作业数'}
+                        , {field: 'tableExportCount', title: '库表导出作业数'}
+                    ]
+                ]
+            });
+        }
+
+        window.renderCatalog = function () {
+            table.render({
+                elem: '#catalog',
+                url: '/catalog/2x',
+                cellMinWidth: 150,
+                cols: [
+                    [
+                        {field: 'type', title: ''}
+                        , {field: 'fileImportCount', title: '文件导入作业数'}
+                        , {field: 'tableImportCount', title: '库表导入作业数'}
+                        , {field: 'realtimeImportCount', title: '实时数据作业数'}
+                        , {field: 'realtimeGovernCount', title: '实时数据开发作业数'}
+                        , {field: 'fileUploadCount', title: '文件上传作业数'}
+                        , {field: 'tableExportCount', title: '库表导出作业数'}
+                    ]
+                ]
+            });
+        }
+
+        // 首次渲染，打开页面默认展示数据表tab页的信息，否则页面是空白的
+        renderTable();
+
+        // 切换tab页触发事件
+        element.on('tab(demo)', function () {
+            if (this.className.search('program') != -1) {
+                renderProgram();
+            } else if (this.className.search('table') != -1) {
+                renderTable();
+            } else if (this.className.search('document') != -1) {
+                renderDocument();
+            } else if (this.className.search('bus') != -1) {
+                renderBus();
+            } else if (this.className.search('job') != -1) {
+                renderJob();
+            }else if (this.className.search('catalog') != -1) {
+                renderCatalog();
+            }
+        });
+    });
+</script>
+</body>
+
+</html>

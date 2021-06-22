@@ -8,7 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @Data
 @ConfigurationProperties(prefix = "data-mid-platform")
 @Configuration
-public class DataPlatfomrConfiguration {
+public class DataPlatformConfiguration {
+    private Integer version;
     private String userId;
     private String privateKey;
     private String address;

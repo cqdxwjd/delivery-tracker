@@ -17,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 public class TreeObject {
     String title;
-    Long id;
+    Integer id;
     String field;
     List<TreeObject> children;
     String href;

@@ -3,6 +3,7 @@ package com.yunli.web.config;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yunli.web.dto.LoginDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
@@ -12,15 +13,14 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
+import java.util.UUID;
 
 @Slf4j
 public class AKSK {
@@ -47,8 +47,54 @@ public class AKSK {
         return userId + "#" + finalDataString;
     }
 
+    /**
+     * 数据中台 2.x 生成密文
+     * @author wangjingdong
+     * @date 2021/6/21 15:14
+     */
+    public static String getCipherText(String privateKeyString)
+            throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchPaddingException, InvalidKeyException,
+            SignatureException {
+        KeyFactory factory = KeyFactory.getInstance("RSA");
+        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyString));
+        PrivateKey privateKey = factory.generatePrivate(privateKeySpec);
+        Signature privateSignature = Signature.getInstance("SHA256withRSA");
+        privateSignature.initSign(privateKey);
+        String input = String.format("%s@%s", UUID.randomUUID().toString(), 3600 * 24);
+        privateSignature.update(input.getBytes(StandardCharsets.UTF_8));
+        return input + "#" + new String(Base64.getEncoder().encode(privateSignature.sign()), StandardCharsets.UTF_8);
+    }
+
     public static String getToken(String address, String cipherText) {
         return getToken(new RestTemplate(), address, cipherText);
+    }
+
+    /**
+     * 数据中台 2.x 获取token方法
+     * @author wangjingdong
+     * @date 2021/6/21 15:13
+     */
+    public static String getToken(RestTemplate restTemplate, String address, String keyId, String cipherText)
+            throws IOException {
+        String uri = address + "/x-authorization-service/authorizations/logins";
+        HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.add("Accept", MediaType.APPLICATION_JSON.toString());
+        requestHeaders.setContentType(MediaType.APPLICATION_JSON);
+        LoginDto domain = new LoginDto(
+                keyId,
+                cipherText,
+                "aksk"
+        );
+        HttpEntity<Object> request = new HttpEntity<>(domain, requestHeaders);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(uri, HttpMethod.POST, request, String.class);
+        if (responseEntity.getStatusCode() == HttpStatus.OK || responseEntity.getStatusCode() == HttpStatus.CREATED) {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode rootNode = mapper.readTree(responseEntity.getBody());
+            return rootNode.get("token").asText();
+        } else {
+            System.out.println("get token failed-------------------");
+        }
+        return null;
     }
 
     /**
