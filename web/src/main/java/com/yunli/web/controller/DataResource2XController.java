@@ -5,7 +5,7 @@ import com.yunli.bigdata.dsep.foundation.WebResult;
 import com.yunli.common.json.JSONArray;
 import com.yunli.common.json.JSONObject;
 import com.yunli.web.config.*;
-import com.yunli.web.doman.TableDomain2x;
+import com.yunli.web.domain.TableDomain2x;
 import com.yunli.web.dto.*;
 import com.yunli.web.repositories.*;
 import com.yunli.web.service.DataResourceService;
@@ -34,6 +34,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.*;
+
+/**
+ * 数据中台 2.x 控制器
+ */
 
 @Slf4j
 @Controller
@@ -94,6 +98,19 @@ public class DataResource2XController {
         return "model2";
     }
 
+    /**
+     * 数据表统计处理方法
+     *
+     * @return
+     * @throws NoSuchPaddingException
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
+     * @throws SignatureException
+     * @throws InvalidKeyException
+     * @throws IOException
+     * @author wangjingdong
+     * @date 2021/6/23 11:16
+     */
     @GetMapping("/table/2x")
     @ResponseBody
     public ResponseEntity<WebResult<List<TableStat>>> tableV2() throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
@@ -245,6 +262,186 @@ public class DataResource2XController {
     }
 
     /**
+     * 文件夹统计处理方法
+     *
+     * @return
+     * @throws NoSuchPaddingException
+     * @throws NoSuchAlgorithmException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws InvalidKeySpecException
+     * @author wangjingdong
+     * @date 2021/6/23 11:16
+     */
+    // TODO: 2021/6/23  数据中台 2.3 之后才有文件夹功能
+    @GetMapping("/document/2x")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<DocumentStat>>> documentV2() throws NoSuchPaddingException,
+            NoSuchAlgorithmException,
+            IllegalBlockSizeException,
+            BadPaddingException,
+            InvalidKeyException,
+            InvalidKeySpecException {
+        List<DocumentStat> list = new ArrayList<>();
+        long count = documentResourceRepository.count();
+        HttpHeaders requestHeaders = new HttpHeaders();
+        String token = AKSK.getToken(
+                dataPlatformConfiguration.getAddress(),
+                AKSK.getCipherText(
+                        dataPlatformConfiguration.getUserId(),
+                        dataPlatformConfiguration.getPrivateKey()
+                )
+        );
+        requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
+        HttpEntity<Object> request = new HttpEntity<>(null, requestHeaders);
+        ResponseEntity<String> responseEntity = restTemplate
+                .exchange(dataPlatformConfiguration.getAddress() + "/x-data-resource-service/v1/resources/documents",
+                        HttpMethod.GET, request, String.class);
+        String body = responseEntity.getBody();
+        JSONObject jsonObject = new JSONObject(body);
+        JSONArray data = jsonObject.getJSONArray("data");
+        int nullCount = 0;
+        int unMountedCount = 0;
+        for (Object doc : data) {
+            JSONObject json = (JSONObject) doc;
+            if (json.getInt("count") == 0) {
+                nullCount++;
+            }
+            if (null == documentCatalogRepository.findByDocumentId(json.getLong("id")).orElse(null)) {
+                unMountedCount++;
+            }
+        }
+        list.add(new DocumentStat("总计", count, nullCount, unMountedCount));
+        return ResponseEntity.ok().body(WebResult.success(list));
+    }
+
+    /**
+     * 资源目录统计处理方法
+     *
+     * @return
+     * @throws NoSuchPaddingException
+     * @throws NoSuchAlgorithmException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws InvalidKeySpecException
+     * @author wangjingdong
+     * @date 2021/6/23 11:25
+     */
+    @GetMapping("/catalog/2x")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<CatalogStat>>> catalog2x() throws NoSuchPaddingException,
+            NoSuchAlgorithmException,
+            IllegalBlockSizeException,
+            BadPaddingException,
+            InvalidKeyException,
+            InvalidKeySpecException, SignatureException, IOException {
+        ArrayList<CatalogStat> list = new ArrayList<>();
+        HttpHeaders requestHeaders = new HttpHeaders();
+        String token = AKSK.getToken(
+                new RestTemplate(),
+                dataPlatformConfiguration.getAddress(),
+                dataPlatformConfiguration.getUserId(),
+                AKSK.getCipherText(dataPlatformConfiguration.getPrivateKey())
+        );
+        requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
+        HttpEntity<Object> request = new HttpEntity<>(null, requestHeaders);
+        String treeBody = restTemplate
+                .exchange(dataPlatformConfiguration.getAddress() + "x-data-resource-service/resource-catalogs?sortByIndex=true&publishStatus=2&pageSize=10000&pageNumber=1",
+                        HttpMethod.GET, request, String.class).getBody();
+        assert treeBody != null;
+        JSONObject treeJson = new JSONObject(treeBody);
+        JSONArray treeData = treeJson.getJSONArray("data");
+        List<TreeObject> subList = getSubList(null, treeData);
+        if (subList != null) {
+            int treeCount = subList.size();
+            int catalogCount = treeData.length() - treeCount;
+            list.add(new CatalogStat("汇总", treeCount, catalogCount));
+            return ResponseEntity.ok().body(WebResult.success(list));
+        }
+        return ResponseEntity.ok().body(WebResult.success(null));
+    }
+
+    /**
+     * 程序开发统计处理方法
+     *
+     * @return
+     * @throws NoSuchPaddingException
+     * @throws NoSuchAlgorithmException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws InvalidKeySpecException
+     * @author wangjingdong
+     * @date 2021/6/23 11:38
+     */
+    @GetMapping("/program/2x")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<ProgramStat>>> program2x() throws NoSuchPaddingException,
+            NoSuchAlgorithmException,
+            IllegalBlockSizeException,
+            BadPaddingException,
+            InvalidKeyException,
+            InvalidKeySpecException {
+        List<ProgramStat> list = new ArrayList<>();
+// TODO: 2021/6/23  
+        return ResponseEntity.ok().body(WebResult.success(null));
+    }
+
+    /**
+     * 实时数据信道统计处理方法
+     *
+     * @return
+     * @throws NoSuchPaddingException
+     * @throws NoSuchAlgorithmException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws InvalidKeySpecException
+     * @author wangjingdong
+     * @date 2021/6/23 11:44
+     */
+    @GetMapping("/bus/2x")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<BusStat>>> bus2x() throws NoSuchPaddingException,
+            NoSuchAlgorithmException,
+            IllegalBlockSizeException,
+            BadPaddingException,
+            InvalidKeyException,
+            InvalidKeySpecException {
+        List<BusStat> list = new ArrayList<>();
+// TODO: 2021/6/23  
+        return ResponseEntity.ok().body(WebResult.success(null));
+    }
+
+    /**
+     * 运行作业统计处理方法
+     *
+     * @return
+     * @throws NoSuchPaddingException
+     * @throws NoSuchAlgorithmException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws InvalidKeySpecException
+     * @author wangjingdong
+     * @date 2021/6/23 11:44
+     */
+    @GetMapping("/job/2x")
+    @ResponseBody
+    public ResponseEntity<WebResult<List<JobStat>>> job2x() throws NoSuchPaddingException,
+            NoSuchAlgorithmException,
+            IllegalBlockSizeException,
+            BadPaddingException,
+            InvalidKeyException,
+            InvalidKeySpecException {
+        List<JobStat> list = new ArrayList<>();
+// TODO: 2021/6/23
+        return ResponseEntity.ok().body(WebResult.success(null));
+    }
+
+    /**
      * 数据中台 2.x 版本的资源目录展示方法
      *
      * @return
@@ -257,9 +454,9 @@ public class DataResource2XController {
      * @author wangjingdong
      * @date 2021/6/21 14:43
      */
-    @GetMapping("/catalog/2x")
+    @GetMapping("/catalog/show")
     @ResponseBody
-    public ResponseEntity<List<TreeObject>> catalog2x() throws NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException {
+    public ResponseEntity<List<TreeObject>> catalogShow() throws NoSuchPaddingException, IllegalBlockSizeException, InvalidKeySpecException, BadPaddingException, NoSuchAlgorithmException, InvalidKeyException, SignatureException, IOException {
         HttpHeaders requestHeaders = new HttpHeaders();
         String token = AKSK.getToken(
                 new RestTemplate(),
@@ -539,7 +736,8 @@ public class DataResource2XController {
         requestHeaders.set(CustomHttpHeaderNames.X_TOKEN, token);
         SqlExecuteDto sqlExecuteDto = new SqlExecuteDto();
 //        sqlExecuteDto.setSql("insert into table stg_class values('1','1班','1楼',6)");
-        sqlExecuteDto.setSql("select * from " + nameEn);
+        // 限定数据量 1 万条
+        sqlExecuteDto.setSql("select * from " + nameEn + " limit 10000");
         sqlExecuteDto.setEngine("mpp");
         sqlExecuteDto.setTimeout(0);
         sqlExecuteDto.setIsIncludeHeaders(false);

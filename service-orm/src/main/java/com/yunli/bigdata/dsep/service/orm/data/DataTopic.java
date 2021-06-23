@@ -309,7 +309,6 @@ public class DataTopic implements Serializable {
     }
     if (tags != null) {
       for (DataTag tag : tags) {
-        // TODO tag中的dataresource现在只针对数据表，增加topic需要再议
         // tag.getResources().add(this);
       }
     }

@@ -148,7 +148,7 @@
         window.renderBus = function () {
             table.render({
                 elem: '#bus',
-                url: '/v2/bus',
+                url: '/bus/2x',
                 cellMinWidth: 150,
                 cols: [
                     [
@@ -187,12 +187,8 @@
                 cols: [
                     [
                         {field: 'type', title: ''}
-                        , {field: 'fileImportCount', title: '文件导入作业数'}
-                        , {field: 'tableImportCount', title: '库表导入作业数'}
-                        , {field: 'realtimeImportCount', title: '实时数据作业数'}
-                        , {field: 'realtimeGovernCount', title: '实时数据开发作业数'}
-                        , {field: 'fileUploadCount', title: '文件上传作业数'}
-                        , {field: 'tableExportCount', title: '库表导出作业数'}
+                        , {field: 'treeCount', title: '目录树数'}
+                        , {field: 'catalogCount', title: '目录数'}
                     ]
                 ]
             });

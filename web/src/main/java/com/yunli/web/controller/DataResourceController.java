@@ -8,7 +8,7 @@ import com.yunli.data.sync.config.JobConfig;
 import com.yunli.data.sync.config.PluginConfig;
 import com.yunli.data.sync.core.HData;
 import com.yunli.web.config.*;
-import com.yunli.web.doman.OozieCoordJobs;
+import com.yunli.web.domain.OozieCoordJobs;
 import com.yunli.web.dto.*;
 import com.yunli.web.repositories.*;
 import com.yunli.web.service.DataResourceService;

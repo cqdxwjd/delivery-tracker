@@ -36,7 +36,6 @@ public class JobType {
     types.add(TABLE_IMPORT);
     types.add(TABLE_EXPORT);
 //    types.add(REAL_DATA_BATCH_IMPORT);
-    // TODO 注释掉，这次测试屏蔽掉
 //    types.add(SQL_JOB);
 //    types.add(FILE_PULL);
     return types;

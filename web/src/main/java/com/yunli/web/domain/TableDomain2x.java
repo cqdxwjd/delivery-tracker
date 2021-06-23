@@ -1,4 +1,4 @@
-package com.yunli.web.doman;
+package com.yunli.web.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
