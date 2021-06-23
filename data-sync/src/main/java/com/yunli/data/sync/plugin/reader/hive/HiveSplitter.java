@@ -12,9 +12,7 @@ import com.yunli.data.sync.exception.HDataException;
 import com.yunli.data.sync.util.LoggerUtils;
 import com.yunli.data.sync.util.Utils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.ql.metadata.Hive;
@@ -101,12 +99,20 @@ public class HiveSplitter extends Splitter {
             Configuration conf = new Configuration();
             Path path = new Path(tableLocation);
             FileSystem hdfs = path.getFileSystem(conf);
-            FileStatus[] fileStatus = hdfs.listStatus(path);
+//            FileStatus[] fileStatus = hdfs.listStatus(path);
             List<String> files = new ArrayList<String>();
-            for (FileStatus fs : fileStatus) {
-                if (!fs.isDir() && !fs.getPath().getName().startsWith("_")) {
-                    files.add(fs.getPath().toString());
-                }
+//            for (FileStatus fs : fileStatus) {
+//                if (!fs.isDir() && !fs.getPath().getName().startsWith("_")) {
+//                    files.add(fs.getPath().toString());
+//                }
+//            }
+
+            // author: wangjingdong
+            // TODO: 2021/6/23 16:37 分区字段值为 null
+            // 递归获取 hdfs 路径中的文件地址
+            RemoteIterator<LocatedFileStatus> locatedFileStatusRemoteIterator = hdfs.listFiles(path, true);
+            while (locatedFileStatusRemoteIterator.hasNext()) {
+                files.add(locatedFileStatusRemoteIterator.next().getPath().toString());
             }
             return files;
         } catch (IOException e) {

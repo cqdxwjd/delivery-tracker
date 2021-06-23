@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License. See accompanying LICENSE file.
+-->
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+
+  <!-- 关闭hdfs上的权限检查 -->
+  <property>
+    <name>dfs.permissions</name>
+    <value>false</value>
+    <description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
+  </property>
+  <property>
+    <name>dfs.permissions.enabled</name>
+    <value>false</value>
+    <description>If "true", enable permission checking in HDFS. If "false", permission checking is turned off, but all other behavior is unchanged.</description>
+  </property>
+
+  <!-- 超级用户的组名，该组下的所有成员都是超级用户 -->
+  <property>
+    <name>dfs.permissions.superusergroup</name>
+    <value>root</value>
+    <description>The name of the group of super-users. The value should be a single group name.</description>
+  </property>
+
+  <!-- hdfs上文件的副本数量 -->
+  <property>
+    <name>dfs.replication</name>
+    <value>3</value>
+    <description>Default block replication.</description>
+  </property>
+
+  <!-- hdfs上文件块的大小 -->
+  <property>
+    <name>dfs.blocksize</name>
+    <value>128m</value>
+    <description>The default block size for new files, in bytes.</description>
+  </property>
+
+  <!-- 可以通过rest api操作hdfs文件系统 -->
+  <property>
+    <name>dfs.webhdfs.enabled</name>
+    <value>true</value>
+    <description>Enable WebHDFS (REST API) in Namenodes and Datanodes.</description>
+  </property>
+
+  <!-- 是否允许重新格式化namenode -->
+  <property>
+    <name>dfs.reformat.disabled</name>
+    <value>false</value>
+    <description>Disable reformat of NameNode. If it's value is set to "true" and metadata directories already exist then attempt to format NameNode will throw NameNodeFormatException.</description>
+  </property>
+
+  <!-- hdfs的命名空间 -->
+  <property>
+    <name>dfs.nameservices</name>
+    <value>bigdata</value>
+  </property>
+
+  <!-- 命名空间下包含的namenode名称 -->
+  <property>
+    <name>dfs.ha.namenodes.bigdata</name>
+    <value>nn1,nn2</value>
+  </property>
+
+  <!-- -->
+  <property>
+    <name>dfs.namenode.http-address.bigdata.nn1</name>
+    <value>172.30.1.228:50070</value>
+    <description>The address and the base port where the dfs namenode web ui will listen on.</description>
+  </property>
+  <property>
+    <name>dfs.namenode.http-address.bigdata.nn2</name>
+    <value>172.30.1.233:50070</value>
+    <description>The address and the base port where the dfs namenode web ui will listen on.</description>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.bigdata.nn1</name>
+    <value>172.30.1.228:8020</value>
+  </property>
+  <property>
+    <name>dfs.namenode.rpc-address.bigdata.nn2</name>
+    <value>172.30.1.233:8020</value>
+  </property>
+
+  <!-- namenode的共享元数据操作记录地址 -->
+  <property>
+    <name>dfs.namenode.shared.edits.dir</name>
+    <value>qjournal://172.30.1.228:8485;172.30.1.233:8485;172.30.1.235:8485/bigdata</value>
+  </property>
+  <property>
+    <name>dfs.journalnode.edits.dir</name>
+    <value>/data/apps/hadoop/journallog</value>
+  </property>
+
+  <!-- hdfs故障转移方法 -->
+  <property>
+    <name>dfs.client.failover.proxy.provider.bigdata</name>
+    <value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+  </property>
+  <property>
+    <name>dfs.ha.fencing.methods</name>
+    <value>sshfence</value>
+  </property>
+  <property>
+    <name>dfs.ha.fencing.ssh.private-key-files</name>
+    <value>/home/admin/.ssh/id_rsa</value>
+  </property>
+
+  <!-- 开启hdfs故障自动转移 -->
+  <property>
+    <name>dfs.ha.automatic-failover.enabled</name>
+    <value>true</value>
+  </property>
+</configuration>

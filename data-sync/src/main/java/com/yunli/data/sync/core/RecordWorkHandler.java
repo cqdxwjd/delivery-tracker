@@ -5,8 +5,13 @@ import com.lmax.disruptor.WorkHandler;
 import com.yunli.data.sync.config.PluginConfig;
 import com.yunli.data.sync.core.plugin.Reader;
 import com.yunli.data.sync.core.plugin.Writer;
+import com.yunli.data.sync.plugin.reader.hive.HiveSplitter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RecordWorkHandler implements WorkHandler<RecordEvent> {
+
+    private static final Logger LOG = LogManager.getLogger(RecordWorkHandler.class);
 
     private Reader[] readers;
     private Writer writer;
@@ -42,8 +47,7 @@ public class RecordWorkHandler implements WorkHandler<RecordEvent> {
                         metric.setWriterStartTime(System.currentTimeMillis());
                     }
                 }
-
-                System.out.println(event.getRecord());
+                LOG.info(event.getRecord());
                 writer.execute(event.getRecord());
                 metric.getWriteCount().incrementAndGet();
             } catch (Exception e) {
