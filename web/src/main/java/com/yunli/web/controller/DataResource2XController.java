@@ -748,4 +748,16 @@ public class DataResource2XController {
         String result = new String(treeBody, StandardCharsets.UTF_8);
         return ResponseEntity.ok().body(WebResult.success(result));
     }
+
+    /**
+     * 新建表
+     *
+     * @author wangjingdong
+     * @date 2021/6/24 16:03
+     */
+    @GetMapping("/test")
+    public void createTable() throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeySpecException, SignatureException, InvalidKeyException, IOException {
+        // author: wangjingdong
+        // TODO: 2021/6/24 16:37 改造成上传文件,创建表
+    }
 }
